@@ -1,0 +1,36 @@
+# Compiled artifacts
+/target/
+/Cargo.lock
+
+# Build scripts
+**/*.rs.bk
+**/*.rs.old
+
+# Logs
+*.log
+
+# Coverage
+/coverage/
+/kcov/
+/tarpaulin-report.*
+
+# IDEs and editors
+/.idea/
+/.vscode/
+/.vs/
+/*.code-workspace
+*.iml
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+
+# Lightning data
+.lightning/
+
+# Misc
+*.swp
+*.swo

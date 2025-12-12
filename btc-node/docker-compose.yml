@@ -1,0 +1,42 @@
+services:
+  bitcoind:
+    image: bitcoin/bitcoin:latest # Must be v28.0+ for Testnet4
+    container_name: bitcoind
+    command:
+      - -testnet4=1
+      - -server=1
+      - -disablewallet=1
+      - -blockfilterindex=0
+      - -prune=550
+      - -dbcache=2048
+      - -maxconnections=32
+      - -rpcuser=${BTC_RPC_USER}
+      - -rpcpassword=${BTC_RPC_PASSWORD}
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcport=${BTC_RPC_PORT}
+      - -port=48333 # Standard Testnet4 P2P port
+      - -fallbackfee=0.0001
+    environment:
+      BTC_RPC_USER: ${BTC_RPC_USER}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD}
+      BTC_RPC_PORT: ${BTC_RPC_PORT}
+    volumes:
+      - ./.btc-data/bitcoin:/home/bitcoin/.bitcoin
+    ports:
+      - "48333:48333" # Testnet4 P2P
+      - "${BTC_RPC_PORT}:${BTC_RPC_PORT}" # RPC
+    restart: unless-stopped
+    healthcheck:
+      test: [
+          "CMD",
+          "bitcoin-cli",
+          "-testnet4", # Use the flag to target the right chain context
+          "-rpcuser=${BTC_RPC_USER}",
+          "-rpcpassword=${BTC_RPC_PASSWORD}",
+          "-rpcport=${BTC_RPC_PORT}",
+          "getblockchaininfo",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5

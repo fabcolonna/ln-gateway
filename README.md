@@ -17,6 +17,25 @@ It is designed to decouple Lightning operations from application logic by exposi
 - A running Core Lightning node with access to its RPC socket
 - Rust toolchain, a Bitcoin full node, and `core-lightningd` installed
 
+### Bitcoin Testnet4 Stack
+
+The `btc-node/` directory ships a Docker Compose setup that runs a Bitcoin Core node on Testnet4 so a host-installed `lightningd` can attach to it.
+
+1. Provision environment variables by copying `btc-node/.env.example` to `.env` and filling in the RPC credentials.
+2. The Compose file binds the node data directory to `btc-node/.btc-data/bitcoin`; keep this folder to persist headers and blocks between restarts.
+3. Start and stop the service with the convenience Makefile in `btc-node/`:
+
+```
+cd btc-node
+make up          # docker compose --env-file .env up -d
+make down        # docker compose --env-file .env down
+make up-clean    # recreate the stack if you need a fresh chainstate
+```
+
+### Installing Core Lightning on the host
+
+Core Lightning currently lacks Testnet4 support in its official container images, so install it on the host OS and point it at the Testnet4 bitcoind RPC endpoint. Follow the upstream instructions for your platform (for example, `brew install lightning` on macOS via the Elements tap or the distribution packages described in the [Core Lightning docs](https://docs.corelightning.org/docs/getting-started)). Once installed, configure `lightningd` with the credentials from your `.env` file so it can connect to the Testnet4 daemon running in Docker.
+
 ## Project Architecture
 
 - `server/`: Axum-based REST service that wraps the CLN RPC socket

@@ -12,8 +12,8 @@ use crate::{
     utils,
 };
 
-#[derive(Debug, Serialize)]
-pub struct ChannelRequestResponse {
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub(super) struct ChannelRequestResponse {
     /// Type of request, must be "channelRequest"
     tag: &'static str,
     /// Remote node address of form node_key@ip_address:port_number
@@ -26,7 +26,17 @@ pub struct ChannelRequestResponse {
 
 type Ret = ApiResponse<ChannelRequestResponse>;
 
-pub async fn handler(State(state): State<Arc<Context>>, request: Request) -> Ret {
+#[utoipa::path(
+    get,
+    path = "/channel-request",
+    tag = "ln-gateway",
+    operation_id = "channelRequest",
+    responses(
+        (status = 200, description = "LNURL Channel Request", body = ChannelRequestResponse),
+        (status = 502, description = "The CoreLightning node encountered an error")
+    )
+)]
+pub(super) async fn handler(State(state): State<Arc<Context>>, request: Request) -> Ret {
     let mut rpc = state.client.lock().await;
     let info = match rpc.call_typed(&GetinfoRequest {}).await {
         Ok(r) => r,
@@ -37,10 +47,18 @@ pub async fn handler(State(state): State<Arc<Context>>, request: Request) -> Ret
 
     let pubkey = info.id.to_string();
     let hostname = utils::extract_request_host(&request, &info);
+    let base_url = utils::request_base_url(&request, &hostname, state.args.listening_port);
+
+    let k1 = utils::gen_k1_as_string();
+    {
+        let mut set = state.channel_keys_set.lock().await;
+        set.insert(k1.clone());
+    }
+
     let response = ChannelRequestResponse {
         uri: format!("{}@{}:{}", pubkey, hostname, state.args.listening_port),
-        callback: "/open_channel".to_string(),
-        k1: utils::gen_k1_as_string(),
+        callback: format!("{}/callbacks/open-channel", base_url),
+        k1,
         tag: "channelRequest",
     };
 

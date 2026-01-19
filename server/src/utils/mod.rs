@@ -12,7 +12,7 @@ pub fn gen_k1_as_string() -> String {
 use std::str::FromStr;
 
 use axum::extract::Request;
-use axum::http::{header, uri::Authority};
+use axum::http::{HeaderMap, header, uri::Authority};
 use cln_rpc::model::responses::GetinfoResponse;
 
 pub fn extract_request_host(request: &Request, info: &GetinfoResponse) -> String {
@@ -38,4 +38,39 @@ pub fn extract_request_host(request: &Request, info: &GetinfoResponse) -> String
         })
         // Fallback to unspecified address
         .unwrap_or_else(|| "0.0.0.0".to_string())
+}
+
+fn header_string(headers: &HeaderMap, name: &str) -> Option<String> {
+    headers
+        .get(name)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned)
+}
+
+/// Best-effort base URL builder for endpoints that must return a callback URL.
+///
+/// Prefers `X-Forwarded-Proto` and `X-Forwarded-Host` (when behind a reverse proxy),
+/// falls back to `Host`, and finally to the provided `fallback_host`.
+pub fn request_base_url(request: &Request, fallback_host: &str, listening_port: u16) -> String {
+    let headers = request.headers();
+    let proto = header_string(headers, "x-forwarded-proto").unwrap_or_else(|| "http".to_string());
+
+    let forwarded =
+        header_string(headers, "x-forwarded-host").or_else(|| header_string(headers, "host"));
+    let authority = forwarded
+        .as_deref()
+        .and_then(|raw| Authority::from_str(raw).ok())
+        .unwrap_or_else(|| {
+            Authority::from_str(&format!("{}:{}", fallback_host, listening_port))
+                .expect("valid fallback authority")
+        });
+
+    let authority =
+        if authority.port_u16().is_some() || listening_port == 80 || listening_port == 443 {
+            authority.to_string()
+        } else {
+            format!("{}:{}", authority.host(), listening_port)
+        };
+
+    format!("{}://{}", proto, authority)
 }

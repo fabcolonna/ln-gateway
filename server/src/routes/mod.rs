@@ -1,18 +1,25 @@
+use std::sync::Arc;
+
 use axum::{
-    Json,
+    Json, Router,
     http::StatusCode,
     response::{IntoResponse, Response},
+    routing::get,
 };
 use serde::Serialize;
+use utoipa::OpenApi;
+
+use crate::context::Context;
 
 pub mod callbacks;
-pub mod channel_request;
-pub mod withdraw_request;
+mod channel_request;
+mod lnurl_auth_request;
+mod withdraw_request;
 
 // TYPES
 
 #[derive(Debug)]
-pub enum ApiResponse<T> {
+enum ApiResponse<T> {
     Ok { status: StatusCode, data: T },
     Err { status: StatusCode, message: String },
 }
@@ -31,7 +38,7 @@ impl<T> ApiResponse<T> {
 // a handler. In this implementation, we convert the ApiResponse<T> into a JSON response.
 
 // Axum calls into_response for tuples like (StatusCode, ApiResponse<T>). If we return such
-// tuples from handlers, this implementation will not be used. Therefore, we changed the
+// tuples from handlers (endpoints), this implementation will not be used. Therefore, we changed the
 // handlers to return ApiResponse<T> directly, and this implementation will be used.
 // Axum will then convert ApiResponse<T> into an HTTP response using this implementation.
 
@@ -56,7 +63,7 @@ where
     }
 }
 
-pub mod api_error {
+mod api_error {
     use crate::routes::ApiResponse;
     use axum::http::StatusCode;
 
@@ -67,3 +74,35 @@ pub mod api_error {
         }
     }
 }
+
+// PUBLIC METHODS
+
+pub fn get_router() -> Router<Arc<Context>> {
+    Router::new()
+        .route("/open-channel", get(channel_request::handler))
+        .route("/withdraw-request", get(withdraw_request::handler))
+        .route("/lnurl-auth", get(lnurl_auth_request::handler))
+        .nest("/callbacks", callbacks::get_router())
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        channel_request::handler,
+        withdraw_request::handler,
+        lnurl_auth_request::handler,
+    ),
+    components(
+        schemas(
+            channel_request::ChannelRequestResponse,
+            withdraw_request::WithdrawRequestResponse,
+            lnurl_auth_request::LnUrlAuthRequestResponse,
+            lnurl_auth_request::LnUrlAuthAction,
+            lnurl_auth_request::LnUrlAuthRequestQuery,
+        )
+    ),
+    tags(
+        (name = "ln-gateway", description = "CoreLightning REST gateway")
+    )
+)]
+pub struct CoreApiDoc;

@@ -1,7 +1,7 @@
 use crate::core::cli::Args;
 
 use cln_rpc::ClnRpc;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -11,6 +11,13 @@ pub struct Context {
 
     // Set of active withdrawal keys for LUD-03 withdraw requests
     pub withdrawal_keys_set: Mutex<HashSet<String>>,
+
+    // Set of active channel request keys (k1) for LNURL-channel callbacks
+    pub channel_keys_set: Mutex<HashSet<String>>,
+
+    // LNURL-auth: pending k1 challenges and completed auth (k1 -> pubkey hex)
+    pub auth_pending_keys_set: Mutex<HashSet<String>>,
+    pub auth_completed: Mutex<HashMap<String, String>>,
 }
 
 impl Context {
@@ -21,6 +28,9 @@ impl Context {
                     args,
                     client: Mutex::new(client),
                     withdrawal_keys_set: Mutex::new(HashSet::new()),
+                    channel_keys_set: Mutex::new(HashSet::new()),
+                    auth_pending_keys_set: Mutex::new(HashSet::new()),
+                    auth_completed: Mutex::new(HashMap::new()),
                 });
 
                 tracing::info!(

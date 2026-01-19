@@ -1,14 +1,12 @@
-mod context;
-mod core;
-mod routes;
-mod utils;
-
 use std::{net::Ipv4Addr, net::SocketAddr};
 
-use axum::{Router, routing::get};
+use axum::Router;
 use tokio::net::TcpListener;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
-use crate::routes::{callbacks, channel_request, withdraw_request};
+use ln_server::routes;
+use ln_server::{context, core, openapi};
 
 #[tokio::main]
 async fn main() {
@@ -18,17 +16,12 @@ async fn main() {
     let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, args.listening_port));
     let ctx = context::Context::new(args.clone()).await;
 
+    let swagger =
+        SwaggerUi::new("/swagger-ui").url("/api-doc/openapi.json", openapi::ApiDoc::openapi());
+
     let router = Router::new()
-        .route("/channel-request", get(channel_request::handler))
-        .route("/withdraw-request", get(withdraw_request::handler))
-        .route(
-            "/callbacks/open-channel",
-            get(callbacks::open_channel::handler),
-        )
-        .route(
-            "/callbacks/withdraw-request",
-            get(callbacks::withdraw_request::handler),
-        )
+        .merge(swagger)
+        .merge(routes::get_router())
         .with_state(ctx)
         .into_make_service(); // Convert the router into a service that can be used by axum
 

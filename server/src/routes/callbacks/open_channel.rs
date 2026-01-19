@@ -13,15 +13,16 @@ use serde_json::Value;
 use crate::context::Context;
 use crate::routes::{ApiResponse, api_error};
 
-#[derive(Deserialize, Debug)]
-pub struct OpenChannelRequest {
+#[derive(Deserialize, Debug, utoipa::ToSchema)]
+pub(super) struct OpenChannelRequest {
+    pub k1: String,
     pub remote_id: String,
     pub amount: Option<u64>,
     pub announce: Option<bool>,
 }
 
-#[derive(Serialize)]
-pub struct OpenChannelResponse {
+#[derive(Serialize, utoipa::ToSchema)]
+pub(super) struct OpenChannelResponse {
     pub ok: bool,
     pub result: Option<Value>,
     pub error: Option<String>,
@@ -29,10 +30,32 @@ pub struct OpenChannelResponse {
 
 type Ret = ApiResponse<OpenChannelResponse>;
 
-pub async fn handler(
+#[utoipa::path(
+    get,
+    path = "/callbacks/open-channel",
+    tag = "ln-gateway",
+    operation_id = "openChannel",
+    params(
+        ("k1" = String, Query, description = "One-time token from /channel-request"),
+        ("remote_id" = String, Query, description = "Remote node pubkey"),
+        ("amount" = Option<u64>, Query, description = "Channel funding amount in satoshis"),
+        ("announce" = Option<bool>, Query, description = "Whether to announce channel")
+    ),
+    responses(
+        (status = 200, description = "Open channel result", body = OpenChannelResponse)
+    )
+)]
+pub(super) async fn handler(
     State(state): State<Arc<Context>>,
     Query(params): Query<OpenChannelRequest>,
 ) -> Ret {
+    {
+        let mut set = state.channel_keys_set.lock().await;
+        if !set.remove(&params.k1) {
+            return api_error::build(StatusCode::BAD_REQUEST, "invalid or already used k1");
+        }
+    }
+
     let id = match PublicKey::from_str(&params.remote_id) {
         Ok(id) => id,
         Err(e) => {

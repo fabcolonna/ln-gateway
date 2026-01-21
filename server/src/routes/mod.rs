@@ -13,6 +13,7 @@ use crate::context::Context;
 
 pub mod callbacks;
 mod channel_request;
+mod health;
 mod lnurl_auth_request;
 mod withdraw_request;
 
@@ -79,21 +80,25 @@ mod api_error {
 
 pub fn get_router() -> Router<Arc<Context>> {
     Router::new()
+        .route("/health", get(health::handler))
         .route("/open-channel", get(channel_request::handler))
         .route("/withdraw-request", get(withdraw_request::handler))
-        .route("/lnurl-auth", get(lnurl_auth_request::handler))
+        .route("/lnurl-auth-request", get(lnurl_auth_request::handler))
         .nest("/callbacks", callbacks::get_router())
 }
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        health::handler,
         channel_request::handler,
         withdraw_request::handler,
         lnurl_auth_request::handler,
     ),
     components(
         schemas(
+            health::HealthStatus,
+            health::HealthResponse,
             channel_request::ChannelRequestResponse,
             withdraw_request::WithdrawRequestResponse,
             lnurl_auth_request::LnUrlAuthRequestResponse,

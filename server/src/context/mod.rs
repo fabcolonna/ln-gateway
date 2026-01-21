@@ -5,9 +5,13 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::core::bitcoin_rpc_connector::BitcoinRPCConnector;
+
 pub struct Context {
     pub args: Args,
-    pub client: Mutex<ClnRpc>,
+
+    pub btc_client: BitcoinRPCConnector,
+    pub cln_client: Mutex<ClnRpc>,
 
     // Set of active withdrawal keys for LUD-03 withdraw requests
     pub withdrawal_keys_set: Mutex<HashSet<String>>,
@@ -22,11 +26,30 @@ pub struct Context {
 
 impl Context {
     pub async fn new(args: Args) -> Arc<Self> {
+        let bitcoin = BitcoinRPCConnector::new(
+            args.btc_rpc_url.clone(),
+            args.btc_rpc_user.clone(),
+            args.btc_rpc_password.clone(),
+        );
+
+        if !bitcoin.is_configured() {
+            tracing::warn!("Bitcoin RPC credentials not configured");
+        } else {
+            if let Err(e) = bitcoin.ping() {
+                tracing::warn!(
+                    "Could not connect to Bitcoin RPC at {}: {:?}",
+                    args.btc_rpc_url,
+                    e
+                );
+            }
+        }
+
         match cln_rpc::ClnRpc::new(&args.rpc_sockpath).await {
-            Ok(client) => {
+            Ok(cln_client) => {
                 let ctx = Arc::new(Context {
                     args,
-                    client: Mutex::new(client),
+                    btc_client: bitcoin,
+                    cln_client: Mutex::new(cln_client),
                     withdrawal_keys_set: Mutex::new(HashSet::new()),
                     channel_keys_set: Mutex::new(HashSet::new()),
                     auth_pending_keys_set: Mutex::new(HashSet::new()),

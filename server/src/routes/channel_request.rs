@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use crate::{
     context::Context,
+    core::utils,
     routes::{ApiResponse, api_error},
-    utils,
 };
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
@@ -37,7 +37,7 @@ type Ret = ApiResponse<ChannelRequestResponse>;
     )
 )]
 pub(super) async fn handler(State(state): State<Arc<Context>>, request: Request) -> Ret {
-    let mut rpc = state.client.lock().await;
+    let mut rpc = state.cln_client.lock().await;
     let info = match rpc.call_typed(&GetinfoRequest {}).await {
         Ok(r) => r,
         Err(e) => {

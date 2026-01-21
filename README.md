@@ -1,174 +1,162 @@
 # LN Gateway
 
-LN Gateway is a Rust-based client/server project that provides a clean, typed interface for interacting with a Core Lightning (CLN) node.
+LN Gateway is a small Axum-based REST server in front of a Core Lightning (CLN) node, plus a web UI that talks to it using fully generated OpenAPI TypeScript types.
 
-It is designed to decouple Lightning operations from application logic by exposing a small, well-defined API over a client/server boundary.
+The goal is to decouple Lightning operations from application logic by exposing a small, typed HTTP API and a minimal operational dashboard.
 
 ## Features
 
-- Rust client and server components
-- Typed request/response model
-- Communication with Core Lightning (CLN)
-- Suitable for local or remote deployments
-- Designed for automation and operational tooling
+- Axum server wrapping the CLN RPC socket.
+- LNURL endpoints (withdraw, channel-request, auth) + callbacks.
+- `GET /health` aggregating CLN state + Bitcoin Core JSON-RPC status (optional).
+- Built-in Swagger UI (`/swagger-ui`) and OpenAPI JSON.
+- Vite + React web UI using generated OpenAPI types (`client/src/lib/api/types.ts`).
+
+## What’s in this repo
+
+- `server/`: Axum REST API that talks to a CLN RPC socket (and optionally to Bitcoin Core JSON-RPC for status).
+- `client/`: Vite + React web UI (status dashboard + flows) using generated OpenAPI types (`openapi.json` + `types.ts`).
+- `btc-node/`: Docker Compose helper for a Bitcoin Core Testnet4 node (useful when running CLN on the host).
 
 ## Prerequisites
 
-- A running Core Lightning node with access to its RPC socket
-- Rust toolchain, a Bitcoin full node, and `core-lightningd` installed
+- A running Core Lightning node, with access to its RPC socket (unix socket path).
+- Rust toolchain (Rust 2024 edition).
+- Node.js (>= 20) and a package manager (`pnpm` recommended).
+- Optional: Bitcoin Core JSON-RPC endpoint if you want `/health` to report blockchain status.
 
-### Bitcoin Testnet4 Stack
+## Quick start
 
-The `btc-node/` directory ships a Docker Compose setup that runs a Bitcoin Core node on Testnet4 so a host-installed `lightningd` can attach to it.
+### 1) Start Bitcoin Core (optional but recommended for `/health`)
 
-1. Provision environment variables by copying `btc-node/.env.example` to `.env` and filling in the RPC credentials.
-2. The Compose file binds the node data directory to `btc-node/.btc-data/bitcoin`; keep this folder to persist headers and blocks between restarts.
-3. Start and stop the service with the convenience Makefile in `btc-node/`:
+The `btc-node/` directory ships a Docker Compose setup that runs Bitcoin Core on Testnet4.
 
-```
+1. Copy and edit `btc-node/.env.example` -> `btc-node/.env` (set RPC credentials + port).
+2. Start the service:
+
+```bash
 cd btc-node
 make up          # docker compose --env-file .env up -d
-make down        # docker compose --env-file .env down
-make up-clean    # recreate the stack if you need a fresh chainstate
 ```
 
-### Installing Core Lightning on the host
+This publishes the RPC port to the host. If you run the server on the host, `LNS_BTC_RPC_URL=http://127.0.0.1:<RPC_PORT>` will work. If you run the server inside Docker, `127.0.0.1` will point at the container itself.
 
-Core Lightning currently lacks Testnet4 support in its official container images, so install it on the host OS and point it at the Testnet4 bitcoind RPC endpoint. Follow the upstream instructions for your platform (for example, `brew install lightning` on macOS via the Elements tap or the distribution packages described in the [Core Lightning docs](https://docs.corelightning.org/docs/getting-started)). Once installed, configure `lightningd` with the credentials from your `.env` file so it can connect to the Testnet4 daemon running in Docker.
+### 2) Run Core Lightning (host install)
 
-## Project Architecture
+Core Lightning currently lacks Testnet4 support in official container images, so install it on the host OS and point it at the Testnet4 bitcoind RPC endpoint.
 
-- `server/`: Axum-based REST service that wraps the CLN RPC socket
-- `client/`: Placeholder crate that will act as the typed consumer (not implemented yet)
+Follow the upstream instructions for your platform (e.g. `brew install lightning` on macOS via the Elements tap, or the packages described in the Core Lightning docs: https://docs.corelightning.org/docs/getting-started).
 
-### Server
+### 3) Configure and run the server
 
-Configuration can be provided through CLI flags or environment variables (loaded via dotenv when present):
+1. Copy `server/.env.example` -> `server/.env` and set at least:
+   - `LNS_CL_RPC_PATH` (path to your `lightning-rpc`)
+   - `LNS_PORT` (defaults to 3000)
+2. (Optional) enable Bitcoin Core status in `/health`:
+   - `LNS_BTC_RPC_URL`
+   - `LNS_BTC_RPC_USER`
+   - `LNS_BTC_RPC_PASSWORD`
 
-| Flag                               | Env                       | Default | Description                        |
-| ---------------------------------- | ------------------------- | ------- | ---------------------------------- |
-| `--rpc-sockpath <PATH>`            | LNS_CL_RPC_PATH           | –       | Path to the CLN RPC unix socket    |
-| `--port, -p <PORT>`                | LNS_PORT                  | 3000    | HTTP listener port                 |
-| `--min-withdrawable-msat <AMOUNT>` | LNS_MIN_WITHDRAWABLE_MSAT | 1000    | Minimum withdrawable amount (msat) |
-| `--max-withdrawable-msat <AMOUNT>` | LNS_MAX_WITHDRAWABLE_MSAT | 100000  | Maximum withdrawable amount (msat) |
+Run:
 
-If no `.env` file is present (you can create one by copying `.env.example`), the server requires the required parameters to be passed via CLI.
+```bash
+cd server
+make run
+```
 
-#### Makefile helpers
+Swagger UI is served at `http://localhost:<LNS_PORT>/swagger-ui`.
 
-The server crate ships a thin wrapper around common workflows in [server/Makefile](server/Makefile):
+### 4) Configure and run the web client
 
-| Target                   | Description                                                                   |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `make build`             | Compile the Axum server (uses `cargo build --bin ln-server` by default).      |
-| `make run`               | Build and run the HTTP server. Extra CLI flags can be appended after `--`.    |
-| `make clean`             | Remove Cargo artefacts and the local `.lightning` directory used for testing. |
-| `make lightningd-start`  | Launch a local `lightningd` instance in `.lightning/` to exercise callbacks.  |
-| `make lightningd-stop`   | Terminate the managed `lightningd` process and delete its state directory.    |
-| `make lightningd-status` | Report whether the managed `lightningd` process is currently running.         |
+1. Copy `client/.env.example` -> `client/.env` and set `VITE_API_BASE_URL` to your server base URL.
+2. Install deps and start the dev server:
 
-#### Running the service
+```bash
+cd client
+pnpm install
+pnpm dev
+```
 
-Ensure you have access to a running Core Lightning node. The Makefile wraps the typical workflow:
+`pnpm dev` runs `gen:api` automatically (via `predev`), so the web UI stays in sync with the server’s OpenAPI schema.
 
-1. Enter the server crate and build the binary (optional if `make run` will build):
-	```
-	cd server
-	make build
-	```
-2. Start a disposable `lightningd` instance for local testing (skippable when pointing at an existing node):
-	```
-	make lightningd-start
-	# Override the binary if needed: make lightningd-start LN_CMD=/usr/local/bin/lightningd
-	```
-3. Launch the REST server, forwarding any CLI args after `--`, or using simply `make run` if an `.env` file is present:
-	```
-	make run -- --rpc-sockpath /path/to/lightning-rpc --port 8080
-	```
-4. When finished, stop the local node and clean up artefacts:
-	```
-	make lightningd-stop
-	make clean   # optional
-	```
+## Server configuration
 
-The HTTP service binds to 0.0.0.0:<port> and logs via tracing. If you prefer raw Cargo commands, the targets document the underlying invocations.
+Configuration can be provided via CLI flags or environment variables (loaded from `server/.env` when present).
 
-#### REST API
+| Flag                               | Env                       | Default                 | Description                        |
+| ---------------------------------- | ------------------------- | ----------------------- | ---------------------------------- |
+| `--rpc-sockpath <PATH>`            | `LNS_CL_RPC_PATH`         | –                       | Path to the CLN RPC unix socket    |
+| `--listening-port <PORT>`          | `LNS_PORT`                | `3000`                  | HTTP listener port                 |
+| `--min-withdrawable-msat <AMOUNT>` | `LNS_MIN_WITHDRAWABLE_MSAT` | `1000`                | Minimum withdrawable amount (msat) |
+| `--max-withdrawable-msat <AMOUNT>` | `LNS_MAX_WITHDRAWABLE_MSAT` | `100000`              | Maximum withdrawable amount (msat) |
+| `--btc-rpc-url <URL>`              | `LNS_BTC_RPC_URL`         | `http://127.0.0.1:48332` | Bitcoin Core JSON-RPC URL          |
+| `--btc-rpc-user <USER>`            | `LNS_BTC_RPC_USER`        | –                       | Bitcoin Core JSON-RPC username     |
+| `--btc-rpc-password <PASS>`        | `LNS_BTC_RPC_PASSWORD`    | –                       | Bitcoin Core JSON-RPC password     |
 
-All responses are wrapped in ApiResponse and serialised as JSON. Successful responses echo the domain payload and failed ones use `{ "status": <http_status>, "error": <message> }`.
+Bitcoin RPC auth is treated as “configured” only when both `LNS_BTC_RPC_USER` and `LNS_BTC_RPC_PASSWORD` are set.
 
-| Method | Path                          | Description                                         |
-| ------ | ----------------------------- | --------------------------------------------------- |
-| GET    | `/channel-request`            | Returns LNURL-channel metadata and a callback token |
-| GET    | `/withdraw-request`           | Issues a LNURL-withdraw request token               |
-| GET    | `/callbacks/open-channel`     | Triggers channel funding with the provided peer     |
-| GET    | `/callbacks/withdraw-request` | Broadcasts a withdrawal transaction                 |
+### Server Makefile helpers
 
-##### `GET /channel-request`
+`server/Makefile` includes convenience targets:
 
-No parameters. Returns:
+- `make build`: build the server binary (`cargo build --bin ln-server`).
+- `make run`: run the server (`cargo run --bin ln-server`).
+- `make clean`: cleanup Cargo artifacts and `.lightning/`.
+- `make lightningd-start|stop|status`: manage a local `lightningd` process in `server/.lightning/` for manual testing.
+
+## API and generated types
+
+- Server OpenAPI is produced by `server/src/bin/openapi_gen.rs` (binary: `openapi_gen`).
+- Client generation is done by `client/scripts/gen-api.mjs`:
+  - runs `cargo run --bin openapi_gen -- --format json --output client/src/lib/api/openapi.json`
+  - runs `openapi-typescript` to produce `client/src/lib/api/types.ts`
+  - formats generated files using Biome
+
+Run manually from the client:
+
+```bash
+cd client
+pnpm run gen:api
+```
+
+Do not edit `client/src/lib/api/types.ts` by hand (it is generated).
+
+## `/health` semantics
+
+`GET /health` returns:
+- `lightning`: CLN node info + sync state
+- `bitcoin`: Bitcoin Core JSON-RPC status snapshot
+  - `status=notconfigured` if BTC RPC credentials are not set
+  - `status=unreachable` if calls fail
+  - `status=ok` when calls succeed
+
+## REST API overview
+
+All successful responses return the domain payload as JSON. Errors return:
 
 ```json
-{
-	"tag": "channelRequest",
-	"uri": "<node_id>@<host>:<port>",
-	"callback": "/open_channel",
-	"k1": "<nonce>"
-}
+{ "status": 502, "error": "..." }
 ```
 
-##### `GET /withdraw-request`
+Endpoints:
 
-No parameters. Returns LNURL-withdraw metadata:
+| Method | Path                          | Description |
+| ------ | ----------------------------- | ----------- |
+| GET    | `/health`                     | CLN + Bitcoin Core status snapshot |
+| GET    | `/channel-request`            | LNURL-channel metadata + callback token |
+| GET    | `/withdraw-request`           | LNURL-withdraw metadata + callback token |
+| GET    | `/lnurl-auth-request`         | LNURL-auth challenge |
+| GET    | `/callbacks/open-channel`     | Open channel callback |
+| GET    | `/callbacks/withdraw-request` | Withdraw callback |
+| GET    | `/callbacks/lnurl-auth`       | LNURL-auth callback |
 
-```json
-{
-	"tag": "withdrawRequest",
-	"callback": "/withdraw-callback",
-	"k1": "<nonce>",
-	"defaultDescription": "Withdraw funds from CoreLightning REST server",
-	"minWithdrawable": 1000,
-	"maxWithdrawable": 100000
-}
-```
+## CI
 
-The `k1` token is stored for one-time validation by the withdrawal callback.
-
-##### `GET /callbacks/open-channel`
-
-Query parameters:
-
-- `remote_id` (required): hex public key of the remote node
-- `amount` (optional, satoshis): channel capacity
-- `announce` (optional, bool): whether to announce the channel
-
-Successful responses contain the CLN RPC output under `result`; errors set `ok` to false and populate `error`.
-
-##### `GET /callbacks/withdraw-request`
-
-Query parameters:
-
-- `destination` (required): bolt11 invoice or on-chain destination understood by CLN
-- `amount` (optional, satoshis): withdrawal amount
-
-Returns the CLN withdrawal artefacts:
-
-```json
-{
-	"tx": "<hex>",
-	"psbt": "<base64>",
-	"txid": "<hex>"
-}
-```
-
-### Client
-
-The client crate currently only hosts a `main` stub and no functionality. Follow-up work will add typed bindings targeting the REST API above.
-
-## Status
-
-The project is under active development. Expect breaking changes until the API stabilises.
+GitHub Actions runs:
+- server `cargo fmt` / `cargo clippy` / `cargo build`
+- client install + `gen:api` and fails if generated files are out of date
+- client `tsc --noEmit` + `vite build`
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT. See `LICENSE`.

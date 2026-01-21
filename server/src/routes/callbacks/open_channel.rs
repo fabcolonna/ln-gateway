@@ -81,7 +81,7 @@ pub(super) async fn handler(
         channel_type: None,
     };
 
-    let mut rpc = state.client.lock().await;
+    let mut rpc = state.cln_client.lock().await;
     let res = match rpc.call_typed(&req).await {
         Ok(res) => res,
         Err(e) => {

@@ -1,0 +1,639 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ln-server",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/callbacks/lnurl-auth": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "lnurlAuthCallback",
+        "parameters": [
+          {
+            "name": "k1",
+            "in": "query",
+            "description": "Challenge token from /lnurl-auth",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "description": "Signature of k1 (hex, compact or DER)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "description": "Signing public key (hex, compressed)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Optional LNURL-auth action",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "description": "Optional LNURL-auth tag",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LNURL-auth callback response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LnUrlAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/callbacks/open-channel": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "openChannel",
+        "parameters": [
+          {
+            "name": "k1",
+            "in": "query",
+            "description": "One-time token from /channel-request",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "remote_id",
+            "in": "query",
+            "description": "Remote node pubkey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Channel funding amount in satoshis",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "announce",
+            "in": "query",
+            "description": "Whether to announce channel",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open channel result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenChannelResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/callbacks/withdraw-request": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "withdraw",
+        "parameters": [
+          {
+            "name": "k1",
+            "in": "query",
+            "description": "One-time token from /withdraw-request",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "destination",
+            "in": "query",
+            "description": "Bitcoin address (or other supported withdraw destination)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Withdraw amount in satoshis",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Withdraw result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueWithdrawResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channel-request": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "channelRequest",
+        "responses": {
+          "200": {
+            "description": "LNURL Channel Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelRequestResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The CoreLightning node encountered an error"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Gateway and CoreLightning status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The CoreLightning node encountered an error"
+          }
+        }
+      }
+    },
+    "/lnurl-auth-request": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "lnurlAuthRequest",
+        "responses": {
+          "200": {
+            "description": "LNURL-auth challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LnUrlAuthRequestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/withdraw-request": {
+      "get": {
+        "tags": ["ln-gateway"],
+        "operationId": "withdrawRequest",
+        "responses": {
+          "200": {
+            "description": "LNURL Withdraw Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawRequestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BitcoinInfo": {
+        "type": "object",
+        "required": [
+          "status",
+          "chain",
+          "blocks",
+          "headers",
+          "verification_progress",
+          "initial_block_download",
+          "connections",
+          "version",
+          "subversion"
+        ],
+        "properties": {
+          "blocks": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Current number of blocks.",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Blockchain name (e.g. bitcoin, testnet, regtest)."
+          },
+          "connections": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of connections to peers.",
+            "minimum": 0
+          },
+          "headers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Current number of headers.",
+            "minimum": 0
+          },
+          "initial_block_download": {
+            "type": "boolean",
+            "description": "Whether bitcoind is in initial block download."
+          },
+          "status": {
+            "$ref": "#/components/schemas/BitcoinStatus",
+            "description": "Overall status of the bitcoind JSON-RPC connection."
+          },
+          "subversion": {
+            "type": "string",
+            "description": "Bitcoind subversion string."
+          },
+          "verification_progress": {
+            "type": "number",
+            "format": "double",
+            "description": "Verification progress (0.0 to 1.0)."
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bitcoind version number."
+          },
+          "warnings": {
+            "type": ["string", "null"],
+            "description": "Any warnings reported by bitcoind."
+          }
+        }
+      },
+      "BitcoinStatus": {
+        "type": "string",
+        "enum": ["ok", "unreachable", "notconfigured"]
+      },
+      "ChannelRequestResponse": {
+        "type": "object",
+        "required": ["tag", "uri", "callback", "k1"],
+        "properties": {
+          "callback": {
+            "type": "string",
+            "description": "Second-level URL to trigger OpenChannel"
+          },
+          "k1": {
+            "type": "string",
+            "description": "Wallet identifier"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Type of request, must be \"channelRequest\""
+          },
+          "uri": {
+            "type": "string",
+            "description": "Remote node address of form node_key@ip_address:port_number"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "lightning",
+          "bitcoin",
+          "min_withdrawable_msat",
+          "max_withdrawable_msat"
+        ],
+        "properties": {
+          "bitcoin": {
+            "$ref": "#/components/schemas/BitcoinInfo",
+            "description": "Overall status of the bitcoind JSON-RPC connection."
+          },
+          "lightning": {
+            "$ref": "#/components/schemas/LightningInfo",
+            "description": "Overall status of the CoreLightning node."
+          },
+          "max_withdrawable_msat": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Maximum withdrawable amount in millisatoshis.",
+            "minimum": 0
+          },
+          "min_withdrawable_msat": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Minimum withdrawable amount in millisatoshis.",
+            "minimum": 0
+          },
+          "warning_bitcoind_sync": {
+            "type": ["string", "null"],
+            "description": "Warning message when bitcoind is not in sync (may be absent)."
+          },
+          "warning_lightningd_sync": {
+            "type": ["string", "null"],
+            "description": "Warning message when lightningd is not in sync (may be absent)."
+          }
+        }
+      },
+      "IssueWithdrawRequest": {
+        "type": "object",
+        "required": ["k1", "destination"],
+        "properties": {
+          "amount": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "minimum": 0
+          },
+          "destination": {
+            "type": "string"
+          },
+          "k1": {
+            "type": "string"
+          }
+        }
+      },
+      "IssueWithdrawResponse": {
+        "type": "object",
+        "required": ["tx", "psbt", "txid"],
+        "properties": {
+          "psbt": {
+            "type": "string"
+          },
+          "tx": {
+            "type": "string"
+          },
+          "txid": {
+            "type": "string"
+          }
+        }
+      },
+      "LightningInfo": {
+        "type": "object",
+        "required": [
+          "status",
+          "pubkey",
+          "cln_version",
+          "num_peers",
+          "num_active_channels",
+          "num_pending_channels"
+        ],
+        "properties": {
+          "alias": {
+            "type": ["string", "null"],
+            "description": "Node alias (may be absent)."
+          },
+          "cln_version": {
+            "type": "string",
+            "description": "CoreLightning version string."
+          },
+          "num_active_channels": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of active channels.",
+            "minimum": 0
+          },
+          "num_peers": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of connected peers.",
+            "minimum": 0
+          },
+          "num_pending_channels": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of pending channels.",
+            "minimum": 0
+          },
+          "pubkey": {
+            "type": "string",
+            "description": "Node public key (hex)."
+          },
+          "status": {
+            "$ref": "#/components/schemas/LightningStatus",
+            "description": "Human-readable overall status; clients treat ok/healthy/ready as operational."
+          }
+        }
+      },
+      "LightningStatus": {
+        "type": "string",
+        "enum": ["ok", "syncing"]
+      },
+      "LnUrlAuthQuery": {
+        "type": "object",
+        "required": ["k1", "sig", "key"],
+        "properties": {
+          "k1": {
+            "type": "string",
+            "description": "One-time challenge (32 bytes hex)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Compressed (33-byte) secp256k1 public key hex"
+          },
+          "sig": {
+            "type": "string",
+            "description": "DER-hex-encoded ECDSA signature for `k1` (some wallets may use compact 64-byte)"
+          }
+        }
+      },
+      "LnUrlAuthRequestAction": {
+        "type": "string",
+        "enum": ["register", "login", "link", "auth"]
+      },
+      "LnUrlAuthRequestQuery": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LnUrlAuthRequestAction",
+                "description": "Optional action enum: register | login | link | auth"
+              }
+            ]
+          }
+        }
+      },
+      "LnUrlAuthRequestResponse": {
+        "type": "object",
+        "required": ["tag", "k1", "callback"],
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LnUrlAuthRequestAction",
+                "description": "Optional action hint for the wallet"
+              }
+            ]
+          },
+          "callback": {
+            "type": "string",
+            "description": "Callback URL to be called by the wallet with `sig` and `key`"
+          },
+          "k1": {
+            "type": "string",
+            "description": "(32 bytes hex) One-time challenge"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Type of request, must be \"login\" per LUD-04"
+          }
+        }
+      },
+      "LnUrlAuthResponse": {
+        "type": "object",
+        "required": ["ok"],
+        "properties": {
+          "error": {
+            "type": ["string", "null"]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "result": {}
+        }
+      },
+      "OpenChannelRequest": {
+        "type": "object",
+        "required": ["k1", "remote_id"],
+        "properties": {
+          "amount": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "minimum": 0
+          },
+          "announce": {
+            "type": ["boolean", "null"]
+          },
+          "k1": {
+            "type": "string"
+          },
+          "remote_id": {
+            "type": "string"
+          }
+        }
+      },
+      "OpenChannelResponse": {
+        "type": "object",
+        "required": ["ok"],
+        "properties": {
+          "error": {
+            "type": ["string", "null"]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "result": {}
+        }
+      },
+      "WithdrawRequestResponse": {
+        "type": "object",
+        "required": [
+          "tag",
+          "callback",
+          "k1",
+          "defaultDescription",
+          "minWithdrawable",
+          "maxWithdrawable"
+        ],
+        "properties": {
+          "callback": {
+            "type": "string",
+            "description": "Second-level URL to trigger WithdrawCallback"
+          },
+          "defaultDescription": {
+            "type": "string",
+            "description": "Default description for the withdrawal invoice"
+          },
+          "k1": {
+            "type": "string",
+            "description": "Unique identifier for this withdrawal request"
+          },
+          "maxWithdrawable": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Maximum withdrawable amount in millisatoshis",
+            "minimum": 0
+          },
+          "minWithdrawable": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Minimum withdrawable amount in millisatoshis",
+            "minimum": 0
+          },
+          "tag": {
+            "type": "string",
+            "description": "Type of request, must be \"withdrawRequest\""
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "ln-gateway",
+      "description": "CoreLightning REST gateway"
+    }
+  ]
+}

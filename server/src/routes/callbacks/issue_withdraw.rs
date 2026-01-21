@@ -73,7 +73,7 @@ pub(super) async fn handler(
         utxos: None,
     };
 
-    let mut rpc = state.client.lock().await;
+    let mut rpc = state.cln_client.lock().await;
     let res = match rpc.call_typed(&req).await {
         Ok(res) => res,
         Err(e) => {

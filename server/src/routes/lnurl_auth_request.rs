@@ -3,11 +3,11 @@ use std::sync::Arc;
 use axum::extract::{Query, Request, State};
 use serde::{Deserialize, Serialize};
 
-use crate::{context::Context, routes::ApiResponse, utils};
+use crate::{context::Context, core::utils, routes::ApiResponse};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub(super) enum LnUrlAuthAction {
+pub(super) enum LnUrlAuthRequestAction {
     Register,
     Login,
     Link,
@@ -17,7 +17,7 @@ pub(super) enum LnUrlAuthAction {
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub(super) struct LnUrlAuthRequestQuery {
     /// Optional action enum: register | login | link | auth
-    pub action: Option<LnUrlAuthAction>,
+    pub action: Option<LnUrlAuthRequestAction>,
 }
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
@@ -29,14 +29,14 @@ pub(super) struct LnUrlAuthRequestResponse {
     /// Callback URL to be called by the wallet with `sig` and `key`
     callback: String,
     /// Optional action hint for the wallet
-    action: Option<LnUrlAuthAction>,
+    action: Option<LnUrlAuthRequestAction>,
 }
 
 type Ret = ApiResponse<LnUrlAuthRequestResponse>;
 
 #[utoipa::path(
     get,
-    path = "/lnurl-auth",
+    path = "/lnurl-auth-request",
     tag = "ln-gateway",
     operation_id = "lnurlAuthRequest",
     responses(

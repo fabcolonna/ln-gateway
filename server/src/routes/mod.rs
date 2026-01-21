@@ -97,12 +97,15 @@ pub fn get_router() -> Router<Arc<Context>> {
     ),
     components(
         schemas(
-            health::HealthStatus,
+            health::BitcoinStatus,
+            health::BitcoinInfo,
+            health::LightningStatus,
+            health::LightningInfo,
             health::HealthResponse,
             channel_request::ChannelRequestResponse,
             withdraw_request::WithdrawRequestResponse,
             lnurl_auth_request::LnUrlAuthRequestResponse,
-            lnurl_auth_request::LnUrlAuthAction,
+            lnurl_auth_request::LnUrlAuthRequestAction,
             lnurl_auth_request::LnUrlAuthRequestQuery,
         )
     ),

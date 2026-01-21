@@ -38,12 +38,50 @@ pub struct Args {
         default_value = "100000"
     )]
     pub max_withdrawable_msat: u64,
+
+    #[arg(
+        long,
+        env = "LNS_BTC_RPC_URL",
+        help = "Bitcoin Core JSON-RPC URL",
+        default_value = "http://127.0.0.1:48332"
+    )]
+    pub btc_rpc_url: String,
+
+    #[arg(
+        long,
+        env = "LNS_BTC_RPC_USER",
+        help = "Bitcoin Core JSON-RPC username"
+    )]
+    pub btc_rpc_user: Option<String>,
+
+    #[arg(
+        long,
+        env = "LNS_BTC_RPC_PASSWORD",
+        help = "Bitcoin Core JSON-RPC password"
+    )]
+    pub btc_rpc_password: Option<String>,
 }
 
 impl Args {
     pub fn new() -> Self {
         // Load variables from a .env file if present before parsing CLI args
         let _ = dotenvy::dotenv();
-        Args::parse()
+        let mut args = Args::parse();
+
+        // dotenv + clap treat `VAR=` as "present but empty", which becomes `Some("")` for
+        // `Option<String>`. For RPC auth we want empty strings to behave like "not set".
+        let user = args.btc_rpc_user.take().filter(|v| !v.trim().is_empty());
+        let pass = args
+            .btc_rpc_password
+            .take()
+            .filter(|v| !v.trim().is_empty());
+
+        // Only accept credentials when both are set.
+        (args.btc_rpc_user, args.btc_rpc_password) = match (user, pass) {
+            (Some(user), Some(pass)) => (Some(user), Some(pass)),
+            _ => (None, None),
+        };
+
+        args
     }
 }

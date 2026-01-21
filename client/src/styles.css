@@ -1,0 +1,115 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.radix-themes {
+  min-height: 100vh;
+  background: var(--gray-1);
+}
+
+.truncate {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Middle-ellipsis: keeps the tail visible and lets the head shrink with ellipsis. */
+.middleEllipsis {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.middleEllipsisHead {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.middleEllipsisTail {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.statusGrid {
+  align-items: stretch;
+}
+
+.statusSubcard {
+  height: 100%;
+  min-width: 0;
+}
+
+.kpiMetrics {
+  height: 100%;
+  align-items: stretch;
+}
+
+.kpiMetric {
+  height: 100%;
+  min-width: 0;
+  padding: var(--space-2);
+  border-left: 1px solid var(--gray-a4);
+}
+
+.kpiMetric:first-child {
+  border-left: none;
+}
+
+/* Slightly denser DataList layout than Radix defaults. */
+:where(.denseDataList.rt-DataListRoot) {
+  gap: var(--space-1);
+}
+
+:where(.denseDataList.rt-DataListRoot):where(.rt-r-orientation-horizontal)
+  :where(.rt-DataListLabel) {
+  min-width: 88px;
+}
+
+.chromeBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.chromeBarTop {
+  top: 0;
+  border-bottom: 1px solid var(--gray-a4);
+}
+
+.chromeBarBottom {
+  bottom: 0;
+  border-top: 1px solid var(--gray-a4);
+}
+
+.radix-themes.light .chromeBar {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.radix-themes.dark .chromeBar {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.appShell {
+  height: 100vh;
+}
+
+.appScrollArea {
+  height: 100vh;
+}
+
+.appContent {
+  padding-top: calc(var(--chromeTop, 64px) + 10px);
+  padding-bottom: calc(var(--chromeBottom, 56px) + 10px);
+}

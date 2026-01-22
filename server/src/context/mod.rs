@@ -34,14 +34,12 @@ impl Context {
 
         if !bitcoin.is_configured() {
             tracing::warn!("Bitcoin RPC credentials not configured");
-        } else {
-            if let Err(e) = bitcoin.ping() {
-                tracing::warn!(
-                    "Could not connect to Bitcoin RPC at {}: {:?}",
-                    args.btc_rpc_url,
-                    e
-                );
-            }
+        } else if let Err(e) = bitcoin.ping() {
+            tracing::warn!(
+                "Could not connect to Bitcoin RPC at {}: {:?}",
+                args.btc_rpc_url,
+                e
+            );
         }
 
         match cln_rpc::ClnRpc::new(&args.rpc_sockpath).await {

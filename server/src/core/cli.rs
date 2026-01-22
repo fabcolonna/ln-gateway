@@ -85,3 +85,9 @@ impl Args {
         args
     }
 }
+
+impl Default for Args {
+    fn default() -> Self {
+        Self::new()
+    }
+}

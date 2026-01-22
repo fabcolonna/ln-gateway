@@ -8,6 +8,7 @@
     "dev": "vite",
     "prebuild": "npm run gen:api",
     "build": "tsc --noEmit && vite build",
+    "build:docker": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "biome check .",
     "format": "biome format --write .",

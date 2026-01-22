@@ -38,3 +38,6 @@ Thumbs.db
 # Misc
 *.swp
 *.swo
+
+# Generated during `gen:api` and deleted afterwards
+src/lib/api/openapi.json

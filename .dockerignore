@@ -1,0 +1,14 @@
+.git
+.github
+.DS_Store
+**/.DS_Store
+
+**/node_modules
+**/dist
+**/target
+
+**/*.log
+**/*.tmp
+
+# local env files
+**/.env

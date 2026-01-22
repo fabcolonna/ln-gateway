@@ -1,0 +1,10 @@
+.DS_Store
+.pnpm-store/
+
+# local env files
+.env
+
+# build artifacts
+**/node_modules/
+**/dist/
+**/target/

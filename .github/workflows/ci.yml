@@ -18,6 +18,11 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -30,24 +35,5 @@ jobs:
         with:
           version: 9
 
-      - name: Server checks
-        working-directory: server
-        run: |
-          cargo fmt --check
-          cargo clippy -- -D warnings
-          cargo build
-
-      - name: Install client deps
-        working-directory: client
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate OpenAPI schema + TS types
-        working-directory: client
-        run: pnpm run gen:api
-
-      - name: Ensure generated types committed
-        run: git diff --exit-code client/src/lib/api/openapi.json client/src/lib/api/types.ts
-
-      - name: Client typecheck/build
-        working-directory: client
-        run: pnpm run build
+      - name: CI
+        run: make ci

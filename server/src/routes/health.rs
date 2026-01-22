@@ -93,7 +93,7 @@ pub(super) struct BitcoinInfo {
 impl BitcoinInfo {
     pub fn make_empty(status: BitcoinStatus, warnings: Option<String>) -> Self {
         Self {
-            status: status,
+            status,
             chain: String::new(),
             blocks: 0,
             headers: 0,

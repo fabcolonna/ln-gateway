@@ -4,6 +4,13 @@ LN Gateway is a small Axum-based REST server in front of a Core Lightning (CLN) 
 
 The goal is to decouple Lightning operations from application logic by exposing a small, typed HTTP API and a minimal operational dashboard.
 
+## TL;DR
+
+- You always need a **Core Lightning node** (CLN) to run the gateway.
+- You **do not need to run Bitcoin Core locally** to deploy the gateway UI/API.
+  - If you want `/health` to include Bitcoin status, the server only needs a **Bitcoin Core JSON-RPC endpoint** (local or remote).
+- `btc-node/` is an optional helper for people who want to spin up a Bitcoin Core node on their machine.
+
 ## Features
 
 - Axum server wrapping the CLN RPC socket.
@@ -15,21 +22,22 @@ The goal is to decouple Lightning operations from application logic by exposing 
 ## What’s in this repo
 
 - `server/`: Axum REST API that talks to a CLN RPC socket (and optionally to Bitcoin Core JSON-RPC for status).
-- `client/`: Vite + React web UI (status dashboard + flows) using generated OpenAPI types (`openapi.json` + `types.ts`).
-- `btc-node/`: Docker Compose helper for a Bitcoin Core Testnet4 node (useful when running CLN on the host).
+- `client/`: Vite + React web UI (status dashboard + flows) using generated OpenAPI TypeScript types (`client/src/lib/api/types.ts`).
+- `btc-node/`: Docker Compose helper for a Bitcoin Core node (Testnet4 by default) for local development.
 
 ## Prerequisites
 
 - A running Core Lightning node, with access to its RPC socket (unix socket path).
 - Rust toolchain (Rust 2024 edition).
 - Node.js (>= 20) and a package manager (`pnpm` recommended).
-- Optional: Bitcoin Core JSON-RPC endpoint if you want `/health` to report blockchain status.
+- Optional: a Bitcoin Core JSON-RPC endpoint if you want `/health` to include blockchain status.
 
-## Quick start
+## Local development (host)
 
-### 1) Start Bitcoin Core (optional but recommended for `/health`)
+### 1) Bitcoin Core (optional)
 
 The `btc-node/` directory ships a Docker Compose setup that runs Bitcoin Core on Testnet4.
+This is only for developers who want to run a Bitcoin node locally. It is not required for deploying the gateway UI/API.
 
 1. Copy and edit `btc-node/.env.example` -> `btc-node/.env` (set RPC credentials + port).
 2. Start the service:
@@ -39,7 +47,7 @@ cd btc-node
 make up          # docker compose --env-file .env up -d
 ```
 
-This publishes the RPC port to the host. If you run the server on the host, `LNS_BTC_RPC_URL=http://127.0.0.1:<RPC_PORT>` will work. If you run the server inside Docker, `127.0.0.1` will point at the container itself.
+This publishes the RPC port to the host. If you run the server on the host, `LNS_BTC_RPC_URL=http://127.0.0.1:<RPC_PORT>` will work.
 
 ### 2) Run Core Lightning (host install)
 
@@ -52,7 +60,7 @@ Follow the upstream instructions for your platform (e.g. `brew install lightning
 1. Copy `server/.env.example` -> `server/.env` and set at least:
    - `LNS_CL_RPC_PATH` (path to your `lightning-rpc`)
    - `LNS_PORT` (defaults to 3000)
-2. (Optional) enable Bitcoin Core status in `/health`:
+2. (Optional) enable Bitcoin Core status in `/health` (any reachable endpoint, local or remote):
    - `LNS_BTC_RPC_URL`
    - `LNS_BTC_RPC_USER`
    - `LNS_BTC_RPC_PASSWORD`
@@ -78,6 +86,40 @@ pnpm dev
 ```
 
 `pnpm dev` runs `gen:api` automatically (via `predev`), so the web UI stays in sync with the server’s OpenAPI schema.
+
+## Docker deployment (recommended)
+
+This repo ships a production-oriented `docker-compose.yml` that runs:
+- `server`: the Axum API (port `3000` inside the container)
+- `web`: nginx serving the built UI and proxying API requests to `server` (port `8080` on the host by default)
+
+Important: the backend still needs access to the **CLN RPC unix socket**. The compose file mounts it from the host.
+
+### 1) Configure
+
+1. Copy `.env.example` to `.env`.
+2. Set at least:
+   - `LNS_CL_RPC_HOST_PATH=/absolute/path/to/lightning-rpc`
+
+Optional:
+- Set `LNS_BTC_RPC_*` to any reachable Bitcoin Core JSON-RPC endpoint if you want `/health` to report Bitcoin status.
+
+### 2) Start
+
+```bash
+make docker-up
+```
+
+- UI: `http://localhost:8080` (default)
+- API (direct): `http://localhost:3000`
+- API (via nginx proxy, same-origin): `http://localhost:8080/health`, `http://localhost:8080/swagger-ui`, etc.
+
+### Notes
+
+- The UI is built with `VITE_API_BASE_URL` from `.env` (build-time). The default (`http://localhost:8080`) keeps it same-origin through nginx.
+- If you point `LNS_BTC_RPC_URL` at a node running on your host:
+  - Docker Desktop: `host.docker.internal` usually works.
+  - Linux: use your host IP / route, or run bitcoind in Docker on the same compose network.
 
 ## Server configuration
 
@@ -108,8 +150,8 @@ Bitcoin RPC auth is treated as “configured” only when both `LNS_BTC_RPC_USER
 
 - Server OpenAPI is produced by `server/src/bin/openapi_gen.rs` (binary: `openapi_gen`).
 - Client generation is done by `client/scripts/gen-api.mjs`:
-  - runs `cargo run --bin openapi_gen -- --format json --output client/src/lib/api/openapi.json`
-  - runs `openapi-typescript` to produce `client/src/lib/api/types.ts`
+  - runs `cargo run --bin openapi_gen -- --format json --output client/src/lib/api/openapi.json` (temporary)
+  - runs `openapi-typescript` to produce `client/src/lib/api/types.ts` (committed)
   - formats generated files using Biome
 
 Run manually from the client:
@@ -153,9 +195,44 @@ Endpoints:
 ## CI
 
 GitHub Actions runs:
-- server `cargo fmt` / `cargo clippy` / `cargo build`
-- client install + `gen:api` and fails if generated files are out of date
-- client `tsc --noEmit` + `vite build`
+- `make ci` (server format/clippy/build + client Biome + client build + OpenAPI/type generation verification)
+
+## Deployment variants
+
+### Backend-only (no nginx)
+
+If you want to serve the UI elsewhere (S3/Cloudflare Pages/nginx on your infra), you can run only the backend container.
+Example:
+
+```bash
+docker build -f server/Dockerfile -t ln-gateway-server .
+docker run --rm -p 3000:3000 \
+  -e LNS_PORT=3000 \
+  -e LNS_CL_RPC_PATH=/cln/lightning-rpc \
+  -v /absolute/path/to/lightning-rpc:/cln/lightning-rpc \
+  ln-gateway-server
+```
+
+Then build the client with:
+- `VITE_API_BASE_URL=http://<your-server-host>:3000`
+
+### Frontend on another domain
+
+The server enables permissive CORS for `GET` endpoints. If you host the UI on a different domain, set `VITE_API_BASE_URL` to the server’s public URL (for example `https://api.example.com`) and deploy the static files from `client/dist`.
+
+### Behind a reverse proxy
+
+Callback URLs are computed using request headers. When running behind a reverse proxy, ensure it sets:
+- `X-Forwarded-Proto`
+- `X-Forwarded-Host`
+
+## Top-level Makefile
+
+Common targets:
+- `make fmt`: format Rust + client (Biome)
+- `make check`: server fmt/clippy/build + client biome + client build
+- `make ci`: CI version of `check` + OpenAPI/type generation verification
+- `make docker-up` / `make docker-down`: bring the deployment compose up/down
 
 ## License
 

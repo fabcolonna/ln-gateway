@@ -81,7 +81,7 @@ mod api_error {
 pub fn get_router() -> Router<Arc<Context>> {
     Router::new()
         .route("/health", get(health::handler))
-        .route("/open-channel", get(channel_request::handler))
+        .route("/channel-request", get(channel_request::handler))
         .route("/withdraw-request", get(withdraw_request::handler))
         .route("/lnurl-auth-request", get(lnurl_auth_request::handler))
         .nest("/callbacks", callbacks::get_router())

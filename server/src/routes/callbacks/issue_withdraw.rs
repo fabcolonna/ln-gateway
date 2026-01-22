@@ -40,7 +40,7 @@ type Ret = ApiResponse<IssueWithdrawResponse>;
 
 #[utoipa::path(
     get,
-    path = "/callbacks/withdraw-request",
+    path = "/callbacks/issue-withdraw",
     tag = "ln-gateway",
     operation_id = "withdraw",
     params(

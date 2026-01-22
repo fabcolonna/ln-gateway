@@ -39,6 +39,9 @@ type Ret = ApiResponse<LnUrlAuthRequestResponse>;
     path = "/lnurl-auth-request",
     tag = "ln-gateway",
     operation_id = "lnurlAuthRequest",
+    params(
+        ("action" = Option<LnUrlAuthRequestAction>, Query, description = "Optional action enum: register | login | link | auth")
+    ),
     responses(
         (status = 200, description = "LNURL-auth challenge", body = LnUrlAuthRequestResponse)
     )

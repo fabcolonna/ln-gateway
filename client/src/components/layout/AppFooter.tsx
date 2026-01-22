@@ -1,6 +1,6 @@
 import { DotFilledIcon } from "@radix-ui/react-icons";
 import { Badge, Flex, Link, Text } from "@radix-ui/themes";
-import { useHealth } from "../../lib/providers/HealthProvider";
+import { useHealth } from "@/lib/providers/HealthProvider";
 
 type ConnectionBadgeProps = {
   state: "connecting" | "online" | "offline";
@@ -8,7 +8,11 @@ type ConnectionBadgeProps = {
   isOperational?: boolean;
 };
 
-const ConnectionBadge = ({ state, detail, isOperational }: ConnectionBadgeProps) => {
+function ConnectionBadge({
+  state,
+  detail,
+  isOperational,
+}: ConnectionBadgeProps) {
   const label =
     state === "online"
       ? isOperational
@@ -43,7 +47,7 @@ const ConnectionBadge = ({ state, detail, isOperational }: ConnectionBadgeProps)
       </Flex>
     </Badge>
   );
-};
+}
 
 type AppFooterProps = {
   appName: string;

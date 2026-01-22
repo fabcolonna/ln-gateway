@@ -113,3 +113,11 @@ body {
   padding-top: calc(var(--chromeTop, 64px) + 10px);
   padding-bottom: calc(var(--chromeBottom, 56px) + 10px);
 }
+
+/* Radix ghost buttons use negative margins; neutralize them to avoid hover misalignment. */
+.radix-themes :where(.rt-Button.rt-variant-ghost) {
+  --margin-top: var(--button-ghost-padding-y);
+  --margin-right: var(--button-ghost-padding-x);
+  --margin-bottom: var(--button-ghost-padding-y);
+  --margin-left: var(--button-ghost-padding-x);
+}

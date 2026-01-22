@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -85,7 +85,13 @@ function main() {
   );
 
   genTypesTs();
-  biomeFormat([OPENAPI_JSON, TYPES_TS]);
+  biomeFormat([TYPES_TS]);
+
+  try {
+    rmSync(OPENAPI_JSON, { force: true });
+  } catch {
+    // ignore
+  }
 }
 
 main();

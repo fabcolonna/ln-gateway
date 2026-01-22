@@ -1,10 +1,18 @@
-import { Code, Container, Flex, ScrollArea, Text } from "@radix-ui/themes";
+import {
+  Code,
+  Container,
+  Flex,
+  ScrollArea,
+  Tabs,
+  Text,
+} from "@radix-ui/themes";
 import { useLayoutEffect, useRef, useState } from "react";
 import AppError from "./components/AppError";
 import AppFooter from "./components/layout/AppFooter";
 import AppHeader from "./components/layout/AppHeader";
-import StatusCard from "./components/StatusCard";
-import getEnv from "./lib/env";
+import RemoteApiWorkbench from "./components/tabs/remote-api/RemoteApi";
+import StatusCard from "./components/tabs/status-card/StatusCard";
+import getEnv from "./env";
 
 export default function App() {
   const topRef = useRef<HTMLDivElement>(null);
@@ -13,12 +21,12 @@ export default function App() {
   const [chromeBottom, setChromeBottom] = useState(56);
 
   useLayoutEffect(() => {
-    const update = () => {
+    function update() {
       const topH = topRef.current?.offsetHeight ?? 64;
       const bottomH = bottomRef.current?.offsetHeight ?? 56;
       setChromeTop(topH);
       setChromeBottom(bottomH);
-    };
+    }
 
     update();
     window.addEventListener("resize", update);
@@ -62,9 +70,24 @@ export default function App() {
         {header}
         <ScrollArea className="appScrollArea" type="auto">
           <Container size="3" className="appContent">
-            <Flex direction="column" gap="2">
-              <StatusCard />
-            </Flex>
+            <Tabs.Root defaultValue="local">
+              <Tabs.List>
+                <Tabs.Trigger value="local">Local status</Tabs.Trigger>
+                <Tabs.Trigger value="remote">Remote API</Tabs.Trigger>
+              </Tabs.List>
+
+              <Tabs.Content value="local">
+                <Flex direction="column" gap="2" mt="3">
+                  <StatusCard />
+                </Flex>
+              </Tabs.Content>
+
+              <Tabs.Content value="remote">
+                <Flex direction="column" gap="2" mt="3">
+                  <RemoteApiWorkbench />
+                </Flex>
+              </Tabs.Content>
+            </Tabs.Root>
           </Container>
         </ScrollArea>
         {footer(swaggerUrl)}

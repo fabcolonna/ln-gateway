@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
-import apiGet from "../api/client";
+import apiGet from "../api/local";
 import type { components } from "../api/types";
 
 type HealthResponse = components["schemas"]["HealthResponse"];
@@ -82,7 +82,9 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       `btc:${health.bitcoin.status}`,
     ];
     if (health.bitcoin.chain) {
-      detailParts.push(`${health.bitcoin.chain} @ height ${health.bitcoin.blocks}`);
+      detailParts.push(
+        `${health.bitcoin.chain} @ height ${health.bitcoin.blocks}`
+      );
     }
 
     return {

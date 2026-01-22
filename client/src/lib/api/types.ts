@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+  "/callbacks/issue-withdraw": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["withdraw"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/callbacks/lnurl-auth": {
     parameters: {
       query?: never;
@@ -28,22 +44,6 @@ export interface paths {
       cookie?: never;
     };
     get: operations["openChannel"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/callbacks/withdraw-request": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: operations["withdraw"];
     put?: never;
     post?: never;
     delete?: never;
@@ -295,6 +295,33 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  withdraw: {
+    parameters: {
+      query: {
+        /** @description One-time token from /withdraw-request */
+        k1: string;
+        /** @description Bitcoin address (or other supported withdraw destination) */
+        destination: string;
+        /** @description Withdraw amount in satoshis */
+        amount?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Withdraw result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IssueWithdrawResponse"];
+        };
+      };
+    };
+  };
   lnurlAuthCallback: {
     parameters: {
       query: {
@@ -355,33 +382,6 @@ export interface operations {
       };
     };
   };
-  withdraw: {
-    parameters: {
-      query: {
-        /** @description One-time token from /withdraw-request */
-        k1: string;
-        /** @description Bitcoin address (or other supported withdraw destination) */
-        destination: string;
-        /** @description Withdraw amount in satoshis */
-        amount?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Withdraw result */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["IssueWithdrawResponse"];
-        };
-      };
-    };
-  };
   channelRequest: {
     parameters: {
       query?: never;
@@ -438,7 +438,10 @@ export interface operations {
   };
   lnurlAuthRequest: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Optional action enum: register | login | link | auth */
+        action?: components["schemas"]["LnUrlAuthRequestAction"];
+      };
       header?: never;
       path?: never;
       cookie?: never;

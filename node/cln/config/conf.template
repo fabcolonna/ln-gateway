@@ -1,0 +1,21 @@
+# Core Lightning config (expanded by envsubst in the container entrypoint)
+
+network=${CLN_NETWORK}
+
+# NOTE: CLN normally uses a network-specific subdir under lightning-dir, but we
+# keep the RPC socket at a stable absolute path via rpc-file.
+lightning-dir=${CLN_DIR}
+rpc-file=${CLN_RPC_FILE}
+rpc-file-mode=0666
+
+alias=${CLN_ALIAS}
+log-level=debug
+
+# Listen for incoming peers (dev default: open it to the world; tighten for prod).
+bind-addr=0.0.0.0:${CLN_PORT}
+
+# Talk to btc via JSON-RPC.
+bitcoin-rpcconnect=${BTC_RPC_HOST}
+bitcoin-rpcport=${BTC_RPC_PORT}
+bitcoin-rpcuser=${BTC_RPC_USER}
+bitcoin-rpcpassword=${BTC_RPC_PASSWORD}

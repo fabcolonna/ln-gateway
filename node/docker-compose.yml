@@ -1,0 +1,78 @@
+name: ln-gateway-node
+services:
+  btc:
+    image: bitcoin/bitcoin:latest # Must be v28.0+ for Testnet4
+    container_name: btc
+    command:
+      - -testnet4=1
+      - -server=1
+      - -disablewallet=1
+      - -blockfilterindex=0
+      - -prune=550
+      - -dbcache=2048
+      - -maxconnections=32
+      - -rpcuser=${BTC_RPC_USER}
+      - -rpcpassword=${BTC_RPC_PASSWORD}
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcport=${BTC_RPC_PORT}
+      - -port=48333 # Standard Testnet4 P2P port
+      - -fallbackfee=0.0001
+    environment:
+      BTC_RPC_USER: ${BTC_RPC_USER}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD}
+      BTC_RPC_PORT: ${BTC_RPC_PORT}
+    volumes:
+      - ./.data/btc-data/bitcoin:/home/bitcoin/.bitcoin
+    ports:
+      - "48333:48333" # Testnet4 P2P
+      - "${BTC_RPC_PORT}:${BTC_RPC_PORT}" # RPC
+    restart: unless-stopped
+    healthcheck:
+      test: [
+          "CMD",
+          "bitcoin-cli",
+          "-testnet4", # Use the flag to target the right chain context
+          "-rpcuser=${BTC_RPC_USER}",
+          "-rpcpassword=${BTC_RPC_PASSWORD}",
+          "-rpcport=${BTC_RPC_PORT}",
+          "getblockchaininfo",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cln:
+    build:
+      context: cln
+      dockerfile: ./Dockerfile
+      args:
+        CLN_GIT_REPO: ${CLN_GIT_REPO:-https://github.com/ElementsProject/lightning.git}
+        CLN_GIT_REF: ${CLN_GIT_REF:-v25.09.3}
+    container_name: cln
+    depends_on:
+      btc:
+        condition: service_healthy
+    environment:
+      BTC_RPC_HOST: btc # Use the service name as hostname
+      BTC_RPC_USER: ${BTC_RPC_USER}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD}
+      BTC_RPC_PORT: ${BTC_RPC_PORT}
+
+      CLN_ALIAS: cln
+      CLN_NETWORK: ${CLN_NETWORK}
+      CLN_PORT: ${CLN_PORT}
+      CLN_DIR: /data
+      CLN_RPC_FILE: /rpc/lightning-rpc
+    volumes:
+      - ./.data/cln-data:/data # Persistent data
+      - ./.data/cln-rpc:/rpc # Expose RPC socket to host
+      - ./cln/config:/config:ro # Read-only config files
+    ports:
+      - "${CLN_PORT}:${CLN_PORT}" # Lightning P2P
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "lightning-cli", "--rpc-file=/rpc/lightning-rpc", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 10

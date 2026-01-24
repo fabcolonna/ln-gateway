@@ -18,7 +18,7 @@ export BTC_RPC_PASSWORD="${BTC_RPC_PASSWORD}"
 mkdir -p "$(dirname "$CLN_RPC_FILE")" "$CLN_DIR"
 
 if [[ -z "$BTC_RPC_USER" || -z "$BTC_RPC_PASSWORD" ]]; then
-  echo "BTC_RPC_USER and BTC_RPC_PASSWORD must be set (see btc-node/.env.example)" >&2
+  echo "BTC_RPC_USER and BTC_RPC_PASSWORD must be set (see node/.env.example)" >&2
   exit 2
 fi
 

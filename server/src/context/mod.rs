@@ -1,17 +1,17 @@
 use crate::core::cli::Args;
 
-use cln_rpc::ClnRpc;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::core::bitcoin_rpc_connector::BitcoinRPCConnector;
+use crate::core::lightning_rpc_connector::LightningRPCConnector;
 
 pub struct Context {
     pub args: Args,
 
     pub btc_client: BitcoinRPCConnector,
-    pub cln_client: Mutex<ClnRpc>,
+    pub cln_client: Mutex<LightningRPCConnector>,
 
     // Set of active withdrawal keys for LUD-03 withdraw requests
     pub withdrawal_keys_set: Mutex<HashSet<String>>,
@@ -42,7 +42,10 @@ impl Context {
             );
         }
 
-        match cln_rpc::ClnRpc::new(&args.rpc_sockpath).await {
+        let sock = args.rpc_sockpath.as_ref().expect("rpc_sockpath required");
+        let cln_client = LightningRPCConnector::connect_unix(sock).await;
+
+        match cln_client {
             Ok(cln_client) => {
                 let ctx = Arc::new(Context {
                     args,
@@ -56,13 +59,13 @@ impl Context {
 
                 tracing::info!(
                     "Connected to CoreLightning RPC at {}",
-                    &ctx.args.rpc_sockpath
+                    ctx.cln_client.lock().await.endpoint()
                 );
 
                 ctx
             }
             Err(e) => {
-                tracing::error!("Could not connect to {}: {}", args.rpc_sockpath, e);
+                tracing::error!("Could not connect to CLN RPC: {}", e);
                 std::process::exit(1);
             }
         }

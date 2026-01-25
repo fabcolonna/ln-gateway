@@ -4,8 +4,9 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use cln_rpc::primitives::{Amount, AmountOrAll};
 use serde::{Deserialize, Serialize};
+
+use cln_rpc::model::responses::WithdrawResponse;
 
 use crate::{
     context::Context,
@@ -26,8 +27,8 @@ pub(super) struct IssueWithdrawResponse {
     pub txid: String,
 }
 
-impl From<cln_rpc::model::responses::WithdrawResponse> for IssueWithdrawResponse {
-    fn from(res: cln_rpc::model::responses::WithdrawResponse) -> Self {
+impl From<WithdrawResponse> for IssueWithdrawResponse {
+    fn from(res: WithdrawResponse) -> Self {
         Self {
             tx: res.tx,
             psbt: res.psbt,
@@ -65,16 +66,8 @@ pub(super) async fn handler(
 
     let amount = params.amount.unwrap_or(0);
 
-    let req = cln_rpc::model::requests::WithdrawRequest {
-        destination: params.destination,
-        satoshi: AmountOrAll::Amount(Amount::from_sat(amount)),
-        feerate: None,
-        minconf: None,
-        utxos: None,
-    };
-
     let mut rpc = state.cln_client.lock().await;
-    let res = match rpc.call_typed(&req).await {
+    let res = match rpc.withdraw(params.destination, amount).await {
         Ok(res) => res,
         Err(e) => {
             return api_error::build(StatusCode::BAD_GATEWAY, e.to_string());

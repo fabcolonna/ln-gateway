@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::path::PathBuf;
 
 #[derive(Parser, Clone)]
 #[command(
@@ -10,9 +11,10 @@ pub struct Args {
     #[arg(
         long,
         env = "LNS_CL_RPC_PATH",
-        help = "Path to the CoreLightning RPC socket"
+        help = "Path to the CoreLightning RPC socket",
+        required = true
     )]
-    pub rpc_sockpath: String,
+    pub rpc_sockpath: Option<PathBuf>,
 
     #[arg(
         short,
@@ -67,6 +69,19 @@ impl Args {
         // Load variables from a .env file if present before parsing CLI args
         let _ = dotenvy::dotenv();
         let mut args = Args::parse();
+
+        // `VAR=` can produce empty values; treat these as "unset" where that makes sense.
+        args.rpc_sockpath = args.rpc_sockpath.take().and_then(|p| {
+            let s = p.to_string_lossy();
+            (!s.trim().is_empty()).then_some(p)
+        });
+        
+        if args.rpc_sockpath.is_none() {
+            eprintln!(
+                "Missing CoreLightning RPC socket path: set --rpc-sockpath or LNS_CL_RPC_PATH"
+            );
+            std::process::exit(2);
+        }
 
         // dotenv + clap treat `VAR=` as "present but empty", which becomes `Some("")` for
         // `Option<String>`. For RPC auth we want empty strings to behave like "not set".

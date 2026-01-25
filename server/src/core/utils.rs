@@ -34,7 +34,7 @@ pub fn extract_request_host(request: &Request, info: &GetinfoResponse) -> String
         .or_else(|| {
             info.address
                 .as_ref()
-                .and_then(|addrs| addrs.iter().find_map(|a| a.address.clone()))
+                .and_then(|addresses| addresses.iter().find_map(|a| a.address.clone()))
         })
         // Fallback to unspecified address
         .unwrap_or_else(|| "0.0.0.0".to_string())

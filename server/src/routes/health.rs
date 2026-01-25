@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode};
-use cln_rpc::model::requests::GetinfoRequest;
 use cln_rpc::model::responses::GetinfoResponse;
 use serde::{Deserialize, Serialize};
 
@@ -155,7 +154,7 @@ type Ret = ApiResponse<HealthResponse>;
 pub(super) async fn handler(State(state): State<Arc<Context>>) -> Ret {
     let mut rpc = state.cln_client.lock().await;
 
-    let cln_info = match rpc.call_typed(&GetinfoRequest {}).await {
+    let cln_info = match rpc.getinfo().await {
         Ok(r) => r,
         Err(e) => return api_error::build(StatusCode::BAD_GATEWAY, e.to_string()),
     };

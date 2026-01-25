@@ -2,7 +2,6 @@ use axum::{
     extract::{Request, State},
     http::StatusCode,
 };
-use cln_rpc::model::requests::GetinfoRequest;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -38,7 +37,7 @@ type Ret = ApiResponse<ChannelRequestResponse>;
 )]
 pub(super) async fn handler(State(state): State<Arc<Context>>, request: Request) -> Ret {
     let mut rpc = state.cln_client.lock().await;
-    let info = match rpc.call_typed(&GetinfoRequest {}).await {
+    let info = match rpc.getinfo().await {
         Ok(r) => r,
         Err(e) => {
             return api_error::build(StatusCode::BAD_GATEWAY, e.to_string());

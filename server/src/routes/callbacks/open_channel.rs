@@ -5,8 +5,7 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use cln_rpc::model::requests::FundchannelRequest;
-use cln_rpc::primitives::{Amount, AmountOrAll, PublicKey};
+use cln_rpc::primitives::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -65,24 +64,8 @@ pub(super) async fn handler(
 
     let amount = params.amount.unwrap_or(0);
 
-    let req = FundchannelRequest {
-        id,
-        amount: AmountOrAll::Amount(Amount::from_sat(amount)),
-        announce: params.announce,
-        feerate: None,
-        minconf: None,
-        utxos: None,
-        mindepth: None,
-        push_msat: None,
-        close_to: None,
-        request_amt: None,
-        reserve: None,
-        compact_lease: None,
-        channel_type: None,
-    };
-
     let mut rpc = state.cln_client.lock().await;
-    let res = match rpc.call_typed(&req).await {
+    let res = match rpc.fundchannel(id, amount, params.announce).await {
         Ok(res) => res,
         Err(e) => {
             return api_error::build(StatusCode::BAD_GATEWAY, e.to_string());

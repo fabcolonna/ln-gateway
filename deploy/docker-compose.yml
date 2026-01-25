@@ -19,7 +19,7 @@ services:
       BTC_MAXCONNECTIONS: ${BTC_MAXCONNECTIONS:-32}
       BTC_FALLBACKFEE: ${BTC_FALLBACKFEE:-0.0001}
     volumes:
-      - btc-data:/home/bitcoin/.bitcoin
+      - btc-data:/home/bitcoin/.bitcoin # Persist bitcoind data
     ports:
       - "${BTC_P2P_PORT:-48333}:${BTC_P2P_PORT:-48333}" # P2P
       - "${BTC_RPC_PORT:-48332}:${BTC_RPC_PORT:-48332}" # RPC
@@ -59,9 +59,9 @@ services:
       CLN_DIR: /data
       CLN_RPC_FILE: /rpc/lightning-rpc
     volumes:
-      - cln-data:/data
-      - cln-rpc:/rpc
-      - ./cln/config:/config:ro
+      - cln-data:/data # Persist cln data
+      - cln-rpc:/rpc # Expose lightning-rpc to other containers
+      - ./cln/config:/config:ro # Put cln/config from host into container @ /config
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "lightning-cli", "--rpc-file=/rpc/lightning-rpc", "getinfo"]

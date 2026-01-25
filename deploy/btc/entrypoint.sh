@@ -22,6 +22,26 @@ if [[ -z "${BTC_RPC_USER:-}" || -z "${BTC_RPC_PASSWORD:-}" ]]; then
   exit 2
 fi
 
+case "${BTC_CHAIN}" in
+  "" | main | mainnet)
+    BTC_CHAIN_CONF_SECTION="main"
+    ;;
+  test | testnet)
+    BTC_CHAIN_CONF_SECTION="test"
+    ;;
+  testnet4)
+    BTC_CHAIN_CONF_SECTION="testnet4"
+    ;;
+  signet | regtest)
+    BTC_CHAIN_CONF_SECTION="${BTC_CHAIN}"
+    ;;
+  *)
+    # Fallback to whatever bitcoind expects for newer chain names.
+    BTC_CHAIN_CONF_SECTION="${BTC_CHAIN}"
+    ;;
+esac
+export BTC_CHAIN_CONF_SECTION
+
 envsubst <"$template_path" >"$out_path"
 
 exec bitcoind -conf="$out_path" -chain="$BTC_CHAIN"

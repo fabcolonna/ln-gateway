@@ -10,6 +10,12 @@ prune=${BTC_PRUNE}
 dbcache=${BTC_DBCACHE}
 maxconnections=${BTC_MAXCONNECTIONS}
 
+# Network-specific settings.
+#
+# On newer chains (notably testnet4), some options are only applied if they are
+# under the corresponding section.
+[${BTC_CHAIN_CONF_SECTION}]
+
 rpcuser=${BTC_RPC_USER}
 rpcpassword=${BTC_RPC_PASSWORD}
 rpcallowip=${BTC_RPC_ALLOWIP}

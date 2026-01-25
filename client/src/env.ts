@@ -2,10 +2,18 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 function createClientEnv() {
+  const runtimeEnv = {
+    ...import.meta.env,
+    CLIENT_API_BASE_URL:
+      import.meta.env.CLIENT_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL,
+    CLIENT_APP_AUTHOR:
+      import.meta.env.CLIENT_APP_AUTHOR ?? import.meta.env.VITE_APP_AUTHOR,
+  };
+
   return createEnv({
-    clientPrefix: "VITE_",
+    clientPrefix: "CLIENT_",
     client: {
-      VITE_API_BASE_URL: z
+      CLIENT_API_BASE_URL: z
         .string()
         .min(1)
         .transform((raw) => {
@@ -16,9 +24,9 @@ function createClientEnv() {
           return `${proto}//${raw}`;
         })
         .pipe(z.url()),
-      VITE_APP_AUTHOR: z.string().min(1).optional(),
+      CLIENT_APP_AUTHOR: z.string().min(1).optional(),
     },
-    runtimeEnv: import.meta.env,
+    runtimeEnv,
     emptyStringAsUndefined: true,
   });
 }

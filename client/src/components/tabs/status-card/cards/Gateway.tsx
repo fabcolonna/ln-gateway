@@ -6,7 +6,7 @@ import { formatMsat } from "@/lib/utils/formatters";
 
 export default function GatewayCard() {
   const { health, isOperational } = useHealth();
-  const backendEndpoint = getEnv().VITE_API_BASE_URL;
+  const backendEndpoint = getEnv().CLIENT_API_BASE_URL;
   const gatewayState = !health
     ? "unknown"
     : isOperational

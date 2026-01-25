@@ -10,7 +10,7 @@ use std::path::PathBuf;
 pub struct Args {
     #[arg(
         long,
-        env = "LNS_CL_RPC_PATH",
+        env = "SERVER_CLN_RPC_PATH",
         help = "Path to the CoreLightning RPC socket",
         required = true
     )]
@@ -19,7 +19,7 @@ pub struct Args {
     #[arg(
         short,
         long,
-        env = "LNS_PORT",
+        env = "SERVER_PORT",
         help = "Port for the REST server to listen on",
         default_value = "3000"
     )]
@@ -27,7 +27,7 @@ pub struct Args {
 
     #[arg(
         long,
-        env = "LNS_MIN_WITHDRAWABLE_MSAT",
+        env = "SERVER_MIN_WITHDRAWABLE_MSAT",
         help = "Minimum withdrawable amount in millisatoshis",
         default_value = "1000"
     )]
@@ -35,7 +35,7 @@ pub struct Args {
 
     #[arg(
         long,
-        env = "LNS_MAX_WITHDRAWABLE_MSAT",
+        env = "SERVER_MAX_WITHDRAWABLE_MSAT",
         help = "Maximum withdrawable amount in millisatoshis",
         default_value = "100000"
     )]
@@ -43,7 +43,7 @@ pub struct Args {
 
     #[arg(
         long,
-        env = "LNS_BTC_RPC_URL",
+        env = "SERVER_BTC_RPC_URL",
         help = "Bitcoin Core JSON-RPC URL",
         default_value = "http://127.0.0.1:48332"
     )]
@@ -51,14 +51,14 @@ pub struct Args {
 
     #[arg(
         long,
-        env = "LNS_BTC_RPC_USER",
+        env = "SERVER_BTC_RPC_USER",
         help = "Bitcoin Core JSON-RPC username"
     )]
     pub btc_rpc_user: Option<String>,
 
     #[arg(
         long,
-        env = "LNS_BTC_RPC_PASSWORD",
+        env = "SERVER_BTC_RPC_PASSWORD",
         help = "Bitcoin Core JSON-RPC password"
     )]
     pub btc_rpc_password: Option<String>,
@@ -68,6 +68,36 @@ impl Args {
     pub fn new() -> Self {
         // Load variables from a .env file if present before parsing CLI args
         let _ = dotenvy::dotenv();
+
+        // Backwards-compat: map old LNS_* env vars to the new SERVER_* names.
+        // This keeps existing deployments working while we migrate docs/config.
+        let mappings = [
+            ("LNS_CL_RPC_PATH", "SERVER_CLN_RPC_PATH"),
+            ("LNS_PORT", "SERVER_PORT"),
+            ("LNS_MIN_WITHDRAWABLE_MSAT", "SERVER_MIN_WITHDRAWABLE_MSAT"),
+            ("LNS_MAX_WITHDRAWABLE_MSAT", "SERVER_MAX_WITHDRAWABLE_MSAT"),
+            ("LNS_BTC_RPC_URL", "SERVER_BTC_RPC_URL"),
+            ("LNS_BTC_RPC_USER", "SERVER_BTC_RPC_USER"),
+            ("LNS_BTC_RPC_PASSWORD", "SERVER_BTC_RPC_PASSWORD"),
+        ];
+
+        for (old_name, new_name) in mappings {
+            let has_new = std::env::var_os(new_name)
+                .and_then(|v| (!v.to_string_lossy().trim().is_empty()).then_some(v))
+                .is_some();
+
+            if has_new {
+                continue;
+            }
+
+            if let Some(v) = std::env::var_os(old_name)
+                && !v.to_string_lossy().trim().is_empty()
+            {
+                // SAFETY: we set vars only during early startup, before spawning threads.
+                unsafe { std::env::set_var(new_name, v) };
+            }
+        }
+
         let mut args = Args::parse();
 
         // `VAR=` can produce empty values; treat these as "unset" where that makes sense.
@@ -75,10 +105,10 @@ impl Args {
             let s = p.to_string_lossy();
             (!s.trim().is_empty()).then_some(p)
         });
-        
+
         if args.rpc_sockpath.is_none() {
             eprintln!(
-                "Missing CoreLightning RPC socket path: set --rpc-sockpath or LNS_CL_RPC_PATH"
+                "Missing CoreLightning RPC socket path: set --rpc-sockpath or SERVER_CLN_RPC_PATH"
             );
             std::process::exit(2);
         }

@@ -1,0 +1,20 @@
+# Generated from environment variables (via envsubst).
+#
+# Set values in `deploy/.env` (see `deploy/.env.example`).
+
+server=${BTC_SERVER}
+disablewallet=${BTC_DISABLEWALLET}
+
+blockfilterindex=${BTC_BLOCKFILTERINDEX}
+prune=${BTC_PRUNE}
+dbcache=${BTC_DBCACHE}
+maxconnections=${BTC_MAXCONNECTIONS}
+
+rpcuser=${BTC_RPC_USER}
+rpcpassword=${BTC_RPC_PASSWORD}
+rpcallowip=${BTC_RPC_ALLOWIP}
+rpcbind=${BTC_RPC_BIND}
+rpcport=${BTC_RPC_PORT}
+
+port=${BTC_P2P_PORT}
+fallbackfee=${BTC_FALLBACKFEE}

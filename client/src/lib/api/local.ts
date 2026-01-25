@@ -8,7 +8,9 @@ import getEnv from "@/env";
 import { HttpError } from "../utils/http";
 import type { paths } from "./types";
 
-const apiClient = createClient<paths>({ baseUrl: getEnv().VITE_API_BASE_URL });
+const apiClient = createClient<paths>({
+  baseUrl: getEnv().CLIENT_API_BASE_URL,
+});
 
 type GetPath = ClientPathsWithMethod<typeof apiClient, "get">;
 type GetInit<Path extends GetPath> = MaybeOptionalInit<paths[Path], "get">;

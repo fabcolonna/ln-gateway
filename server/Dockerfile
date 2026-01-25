@@ -19,6 +19,6 @@ COPY --from=builder /app/server/target/release/ln-server /usr/local/bin/ln-serve
 
 # Expose the port the server will run on
 EXPOSE 3000
-ENV LNS_PORT=3000
+ENV SERVER_PORT=3000
 
 CMD ["ln-server"]

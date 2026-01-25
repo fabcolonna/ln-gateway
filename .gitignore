@@ -2,7 +2,11 @@
 .pnpm-store/
 
 # local env files
-.env
+**/.env
+
+# dev data dirs
+.data/
+**/.data/
 
 # build artifacts
 **/node_modules/

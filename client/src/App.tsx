@@ -63,7 +63,7 @@ export default function App() {
 
   try {
     const env = getEnv();
-    const swaggerUrl = `${env.VITE_API_BASE_URL.replace(/\/$/, "")}/swagger-ui`;
+    const swaggerUrl = `${env.CLIENT_API_BASE_URL.replace(/\/$/, "")}/swagger-ui`;
 
     return (
       <div className="appShell" style={shellStyle}>
@@ -107,7 +107,7 @@ export default function App() {
               subtitle="Fix your `.env` (or Vite env vars) and reload."
               description={
                 <Text size="2" color="gray">
-                  Required: <Code>VITE_API_BASE_URL</Code>
+                  Required: <Code>CLIENT_API_BASE_URL</Code>
                 </Text>
               }
               details={message}

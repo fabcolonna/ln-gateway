@@ -9,8 +9,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY client/ ./
 
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG CLIENT_API_BASE_URL
+ENV CLIENT_API_BASE_URL=$CLIENT_API_BASE_URL
 
 RUN pnpm run build:docker
 

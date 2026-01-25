@@ -19,12 +19,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PATH="$PATH:/root/.local/bin"
 
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 WORKDIR /src
 RUN git clone --depth 1 --branch "${CLN_GIT_REF}" --recursive "${CLN_GIT_REPO}"
 
 WORKDIR /src/lightning
 RUN uv sync --all-extras --all-groups --frozen
-RUN ./configure --prefix=/usr/local --disable-rust
+RUN ./configure --prefix=/usr/local
 RUN RUST_PROFILE=release uv run make -j$(nproc)
 RUN RUST_PROFILE=release make install DESTDIR=/out
 

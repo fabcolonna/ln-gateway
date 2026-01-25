@@ -1,4 +1,6 @@
-# Core Lightning config (expanded by envsubst in the container entrypoint)
+# Generated from environment variables (via envsubst).
+#
+# Set values in `deploy/.env` (see `deploy/.env.example`).
 
 network=${CLN_NETWORK}
 

@@ -1,0 +1,42 @@
+name: ln-gateway-dev-bitcoin
+services:
+  btc:
+    image: bitcoin/bitcoin:latest # Must be v28.0+ for Testnet4
+    command:
+      - -testnet4=1
+      - -server=1
+      - -disablewallet=1
+      - -blockfilterindex=0
+      - -prune=${BTC_PRUNE_MB:-5500}
+      - -dbcache=2048
+      - -maxconnections=32
+      - -rpcuser=${BTC_RPC_USER:?BTC_RPC_USER is required}
+      - -rpcpassword=${BTC_RPC_PASSWORD:?BTC_RPC_PASSWORD is required}
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcport=${BTC_RPC_PORT:-48332}
+      - -port=48333 # Standard Testnet4 P2P port
+      - -fallbackfee=0.0001
+    environment:
+      BTC_RPC_USER: ${BTC_RPC_USER:?BTC_RPC_USER is required}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD:?BTC_RPC_PASSWORD is required}
+      BTC_RPC_PORT: ${BTC_RPC_PORT:-48332}
+    volumes:
+      - ../.data/btc-data/bitcoin:/home/bitcoin/.bitcoin
+    ports:
+      - "48333:48333" # Testnet4 P2P
+      - "${BTC_RPC_PORT:-48332}:${BTC_RPC_PORT:-48332}" # RPC
+    restart: unless-stopped
+    healthcheck:
+      test: [
+          "CMD",
+          "bitcoin-cli",
+          "-testnet4", # Use the flag to target the right chain context
+          "-rpcuser=${BTC_RPC_USER}",
+          "-rpcpassword=${BTC_RPC_PASSWORD}",
+          "-rpcport=${BTC_RPC_PORT:-48332}",
+          "getblockchaininfo",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5

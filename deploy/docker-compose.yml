@@ -1,0 +1,108 @@
+services:
+  btc:
+    build:
+      context: ./btc
+      dockerfile: ./Dockerfile
+    environment:
+      BTC_CHAIN: ${BTC_CHAIN:-testnet4}
+      BTC_RPC_USER: ${BTC_RPC_USER:?BTC_RPC_USER is required}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD:?BTC_RPC_PASSWORD is required}
+      BTC_RPC_PORT: ${BTC_RPC_PORT:-48332}
+      BTC_P2P_PORT: ${BTC_P2P_PORT:-48333}
+      BTC_RPC_BIND: ${BTC_RPC_BIND:-0.0.0.0}
+      BTC_RPC_ALLOWIP: ${BTC_RPC_ALLOWIP:-0.0.0.0/0}
+      BTC_SERVER: ${BTC_SERVER:-1}
+      BTC_DISABLEWALLET: ${BTC_DISABLEWALLET:-1}
+      BTC_BLOCKFILTERINDEX: ${BTC_BLOCKFILTERINDEX:-0}
+      BTC_PRUNE: ${BTC_PRUNE:-550}
+      BTC_DBCACHE: ${BTC_DBCACHE:-2048}
+      BTC_MAXCONNECTIONS: ${BTC_MAXCONNECTIONS:-32}
+      BTC_FALLBACKFEE: ${BTC_FALLBACKFEE:-0.0001}
+    volumes:
+      - btc-data:/home/bitcoin/.bitcoin
+    ports:
+      - "${BTC_P2P_PORT:-48333}:${BTC_P2P_PORT:-48333}" # P2P
+      - "${BTC_RPC_PORT:-48332}:${BTC_RPC_PORT:-48332}" # RPC
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bitcoin-cli",
+          "-rpcuser=${BTC_RPC_USER}",
+          "-rpcpassword=${BTC_RPC_PASSWORD}",
+          "-rpcport=${BTC_RPC_PORT:-48332}",
+          "getblockchaininfo",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cln:
+    build:
+      context: ./cln
+      dockerfile: ./Dockerfile
+      args:
+        CLN_GIT_REPO: ${CLN_GIT_REPO:-https://github.com/ElementsProject/lightning.git}
+        CLN_GIT_REF: ${CLN_GIT_REF:-v25.09.3}
+    depends_on:
+      btc:
+        condition: service_healthy
+    environment:
+      BTC_RPC_HOST: btc
+      BTC_RPC_USER: ${BTC_RPC_USER:?BTC_RPC_USER is required}
+      BTC_RPC_PASSWORD: ${BTC_RPC_PASSWORD:?BTC_RPC_PASSWORD is required}
+      BTC_RPC_PORT: ${BTC_RPC_PORT:-48332}
+      CLN_ALIAS: ${CLN_ALIAS:-cln}
+      CLN_NETWORK: ${CLN_NETWORK:-testnet4}
+      CLN_PORT: ${CLN_PORT:-9735}
+      CLN_DIR: /data
+      CLN_RPC_FILE: /rpc/lightning-rpc
+    volumes:
+      - cln-data:/data
+      - cln-rpc:/rpc
+      - ./cln/config:/config:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "lightning-cli", "--rpc-file=/rpc/lightning-rpc", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      cln:
+        condition: service_healthy
+    environment:
+      - SERVER_CLN_RPC_PATH=/cln/lightning-rpc
+      - SERVER_PORT=3000
+      - SERVER_MIN_WITHDRAWABLE_MSAT=${SERVER_MIN_WITHDRAWABLE_MSAT:-${LNS_MIN_WITHDRAWABLE_MSAT:-1000}}
+      - SERVER_MAX_WITHDRAWABLE_MSAT=${SERVER_MAX_WITHDRAWABLE_MSAT:-${LNS_MAX_WITHDRAWABLE_MSAT:-100000}}
+      - SERVER_BTC_RPC_URL=http://btc:${BTC_RPC_PORT:-48332}
+      - SERVER_BTC_RPC_USER=${BTC_RPC_USER:?BTC_RPC_USER is required}
+      - SERVER_BTC_RPC_PASSWORD=${BTC_RPC_PASSWORD:?BTC_RPC_PASSWORD is required}
+    volumes:
+      - cln-rpc:/cln
+    ports:
+      - "${HOST_SERVER_PORT:-${SERVER_PORT:-3000}}:3000"
+
+  web:
+    build:
+      context: ..
+      dockerfile: client/Dockerfile
+      args:
+        CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL:-${VITE_API_BASE_URL:-http://localhost:${HOST_WEB_PORT:-${WEB_PORT:-8080}}}}
+    depends_on:
+      - server
+    restart: unless-stopped
+    ports:
+      - "${HOST_WEB_PORT:-${WEB_PORT:-8080}}:8080"
+
+volumes:
+  btc-data:
+  cln-data:
+  cln-rpc:

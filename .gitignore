@@ -12,3 +12,9 @@
 **/node_modules/
 **/dist/
 **/target/
+
+# generated swagger site (GitHub Pages artifact)
+public/
+
+# generated swagger pages output
+public/swagger/

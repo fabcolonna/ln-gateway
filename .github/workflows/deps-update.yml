@@ -1,0 +1,61 @@
+---
+name: Dependency updates PR
+
+"on":
+  workflow_dispatch:
+  schedule:
+    # Every Monday at 06:30 UTC
+    - cron: "30 6 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: deps-update
+  cancel-in-progress: false
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+
+      - name: Update Rust lockfile
+        working-directory: server
+        run: cargo update
+
+      - name: Update client lockfile (within ranges)
+        working-directory: client
+        run: pnpm up
+
+      - name: Verify build/check
+        run: make check
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bot/deps-update
+          delete-branch: true
+          title: "chore: dependency updates"
+          commit-message: "chore: dependency updates"
+          body: |
+            Automated dependency updates:
+            - `server/Cargo.lock` via `cargo update`
+            - `client/pnpm-lock.yaml` (and possibly `client/package.json`) via `pnpm up`

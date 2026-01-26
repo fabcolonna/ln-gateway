@@ -1,7 +1,8 @@
+---
 # Deploy Swagger UI (static) to GitHub Pages (gh-pages branch)
 name: Deploy Swagger UI to GitHub Pages
 
-on:
+"on":
   # Runs on pushes targeting the default branch
   push:
     branches: ["main"]

@@ -53,7 +53,7 @@ ci-swagger:
 
 site-swagger: ci-swagger
 	@mkdir -p $(SWAGGER_STATIC_DIR); \
-	mv $(SWAGGER_SPEC) $(SWAGGER_STATIC_DIR)/api.yaml; \
+	cp $(SWAGGER_SPEC) $(SWAGGER_STATIC_DIR)/api.yaml; \
 	: > $(SWAGGER_STATIC_DIR)/.nojekyll; \
 	printf '%b' '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <title>LN Gateway API Docs</title>\n    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />\n    <style>body{margin:0}</style>\n  </head>\n  <body>\n    <div id="swagger-ui"></div>\n    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>\n    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>\n    <script>\n      window.ui = SwaggerUIBundle({\n        url: "./api.yaml",\n        dom_id: "#swagger-ui",\n        deepLinking: true,\n        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],\n        layout: "StandaloneLayout"\n      });\n    </script>\n  </body>\n</html>\n' > $(SWAGGER_STATIC_DIR)/index.html
 

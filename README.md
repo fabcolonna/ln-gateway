@@ -1,10 +1,10 @@
 # LN Gateway
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://fabcolonna.github.io/ln-gateway/)
+
 LN Gateway is a small Axum-based REST server in front of a Core Lightning (CLN) node, plus a web UI that talks to it using fully generated OpenAPI TypeScript types.
 
 The goal is to decouple Lightning operations from application logic by exposing a small, typed HTTP API and a minimal operational dashboard.
-
-API docs (Swagger UI): https://fabcolonna.github.io/ln-gateway/
 
 ## TL;DR
 
@@ -35,6 +35,14 @@ API docs (Swagger UI): https://fabcolonna.github.io/ln-gateway/
 - Node.js (>= 20) and a package manager (`pnpm` recommended).
 - GNU Make.
 - Optional: a Bitcoin Core JSON-RPC endpoint if you want `/health` to include blockchain status.
+
+## Git hooks (optional)
+
+This repo uses Husky to block commits when `make check` fails.
+
+```bash
+pnpm install
+```
 
 ## Local development
 

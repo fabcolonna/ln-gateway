@@ -22,12 +22,11 @@ fn should_log_path(path: &str) -> bool {
 
 fn extract_client_addr(headers: &HeaderMap, connect: Option<SocketAddr>) -> String {
     // Prefer X-Forwarded-For (nginx sets it as a comma-separated list).
-    if let Some(v) = headers.get("x-forwarded-for").and_then(|h| h.to_str().ok()) {
-        if let Some(first) = v.split(',').next().map(str::trim) {
-            if !first.is_empty() {
-                return first.to_string();
-            }
-        }
+    if let Some(v) = headers.get("x-forwarded-for").and_then(|h| h.to_str().ok())
+        && let Some(first) = v.split(',').next().map(str::trim)
+        && !first.is_empty()
+    {
+        return first.to_string();
     }
 
     // Next, try X-Real-IP.

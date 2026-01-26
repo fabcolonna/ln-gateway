@@ -4,6 +4,8 @@ LN Gateway is a small Axum-based REST server in front of a Core Lightning (CLN) 
 
 The goal is to decouple Lightning operations from application logic by exposing a small, typed HTTP API and a minimal operational dashboard.
 
+API docs (Swagger UI): https://fabcolonna.github.io/ln-gateway/
+
 ## TL;DR
 
 - You always need a **Core Lightning node** (CLN) to run the gateway.

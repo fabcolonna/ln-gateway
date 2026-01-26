@@ -100,6 +100,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/recent-requests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["recent_requests"];
+    put?: never;
+    post?: never;
+    delete: operations["clear_recent_requests"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/withdraw-request": {
     parameters: {
       query?: never;
@@ -265,6 +281,26 @@ export interface components {
       error?: string | null;
       ok: boolean;
       result?: unknown;
+    };
+    RecentRequestEntry: {
+      /** @description Best-effort client address (usually from X-Forwarded-For when behind nginx). */
+      client_addr: string;
+      /** @description HTTP method (e.g. GET). */
+      method: string;
+      /** @description Convenience boolean: true when status < 400. */
+      ok: boolean;
+      /** @description Request path (no query string). */
+      path: string;
+      /**
+       * Format: int32
+       * @description HTTP status code returned by the gateway.
+       */
+      status: number;
+      /**
+       * Format: int64
+       * @description Unix timestamp in milliseconds.
+       */
+      ts_ms: number;
     };
     WithdrawRequestResponse: {
       /** @description Second-level URL to trigger WithdrawCallback */
@@ -456,6 +492,47 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["LnUrlAuthRequestResponse"];
         };
+      };
+    };
+  };
+  recent_requests: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of entries returned (default: 15, max: 50). */
+        limit?: number | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Most recent requests processed by the gateway */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecentRequestEntry"][];
+        };
+      };
+    };
+  };
+  clear_recent_requests: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Clears the recent requests log */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

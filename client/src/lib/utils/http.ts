@@ -14,6 +14,9 @@ export class HttpError extends Error {
   }) {
     const details = (() => {
       const body = args.body;
+      if (body === null || body === undefined) {
+        return "";
+      }
       if (
         typeof body === "object" &&
         body !== null &&
@@ -34,11 +37,20 @@ export class HttpError extends Error {
       }
     })();
 
+    const defaultDetails = (() => {
+      if (details) return "";
+      if (args.status === 404) return "Not Found";
+      return "";
+    })();
+
     super(
-      details
-        ? `${args.method.toUpperCase()} ${args.url} failed (${args.status}): ${details}`
+      details || defaultDetails
+        ? `${args.method.toUpperCase()} ${args.url} failed (${args.status}): ${
+            details || defaultDetails
+          }`
         : `${args.method.toUpperCase()} ${args.url} failed (${args.status})`
     );
+
     this.name = "HttpError";
     this.method = args.method.toUpperCase();
     this.status = args.status;

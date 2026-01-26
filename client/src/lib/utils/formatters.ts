@@ -5,7 +5,7 @@ export function formatMaybeNumber(value: number | null | undefined) {
 
 export function formatMaybePercent(value: number | null | undefined) {
   if (value === undefined || value === null) return "—";
-  return `${(value * 100).toFixed(0)}%`;
+  return `${(value * 100).toFixed(0)}`;
 }
 
 export function splitForMiddleEllipsis(text: string, tailChars = 16) {

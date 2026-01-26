@@ -72,7 +72,7 @@ export default function BlockchainCard() {
             justify="center"
             className="kpiMetric"
           >
-            <Text size="7" weight="bold" style={{ lineHeight: 1 }}>
+            <Text size="6" weight="bold" style={{ lineHeight: 1 }}>
               {bitcoinOk ? formatMaybeNumber(bitcoinBlocks) : "—"}
             </Text>
             <Text size="2" color="gray">
@@ -91,7 +91,7 @@ export default function BlockchainCard() {
               {syncLabel}
             </Text>
             <Text size="2" color="gray">
-              Sync
+              Sync (%)
             </Text>
           </Flex>
 

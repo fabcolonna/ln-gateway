@@ -163,6 +163,11 @@ This is configured in `client/nginx.conf`:
 
 Because the browser talks only to the nginx origin (for example `http://localhost:8080`), the UI can keep `CLIENT_API_BASE_URL` same-origin and avoid CORS entirely.
 
+Why this avoids CORS:
+- CORS is a browser-enforced restriction for **cross-origin** requests.
+- In `deploy/docker-compose.yml`, the browser sends requests to the same origin that served the UI (nginx), e.g. `https://your-domain/health`.
+- nginx proxies those paths to the backend container over the internal Docker network, but the browser still sees the request as same-origin, so it doesn’t require any `Access-Control-Allow-*` headers.
+
 If you add new API routes and want them to be reachable at the same origin (`http://<web>/...`), update the regex in `client/nginx.conf`.
 
 ### Notes
@@ -274,7 +279,9 @@ Then build the client with:
 
 ### Frontend on another domain
 
-The server enables permissive CORS for `GET` endpoints. If you host the UI on a different domain, set `CLIENT_API_BASE_URL` to the server’s public URL (for example `https://api.example.com`) and deploy the static files from `client/dist`.
+If you host the UI on a different origin (different domain/port/protocol) and have the browser call the API directly (for example UI at `https://ui.example.com` and API at `https://api.example.com`), then requests become cross-origin and CORS matters.
+
+The server enables permissive CORS for `GET` endpoints to support that scenario and local dev (for example `localhost:5173` → `localhost:3000`). In that case, set `CLIENT_API_BASE_URL` to the server’s public URL and deploy the static files from `client/dist`.
 
 ### Behind a reverse proxy
 

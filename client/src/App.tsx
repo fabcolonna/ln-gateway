@@ -11,6 +11,7 @@ import AppError from "./components/AppError";
 import AppFooter from "./components/layout/AppFooter";
 import AppHeader from "./components/layout/AppHeader";
 import RemoteApiWorkbench from "./components/tabs/remote-api/RemoteApi";
+import RecentRequestsCard from "./components/tabs/status-card/cards/RecentRequests";
 import StatusCard from "./components/tabs/status-card/StatusCard";
 import getEnv from "./env";
 
@@ -79,6 +80,7 @@ export default function App() {
               <Tabs.Content value="local">
                 <Flex direction="column" gap="2" mt="3">
                   <StatusCard />
+                  <RecentRequestsCard />
                 </Flex>
               </Tabs.Content>
 

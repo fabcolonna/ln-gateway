@@ -2,12 +2,18 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 function createClientEnv() {
+  const rawBaseUrl =
+    import.meta.env.CLIENT_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL;
+  const baseUrl =
+    typeof rawBaseUrl === "string" && rawBaseUrl.trim().length > 0
+      ? rawBaseUrl
+      : undefined;
+
   const runtimeEnv = {
     ...import.meta.env,
     CLIENT_API_BASE_URL:
-      import.meta.env.CLIENT_API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL,
-    CLIENT_APP_AUTHOR:
-      import.meta.env.CLIENT_APP_AUTHOR ?? import.meta.env.VITE_APP_AUTHOR,
+      baseUrl ??
+      (typeof window !== "undefined" ? window.location.origin : undefined),
   };
 
   return createEnv({
@@ -20,11 +26,11 @@ function createClientEnv() {
           if (/^https?:\/\//i.test(raw)) return raw;
           const proto =
             typeof window !== "undefined" ? window.location.protocol : "http:";
+
           if (raw.startsWith("//")) return `${proto}${raw}`;
           return `${proto}//${raw}`;
         })
         .pipe(z.url()),
-      CLIENT_APP_AUTHOR: z.string().min(1).optional(),
     },
     runtimeEnv,
     emptyStringAsUndefined: true,

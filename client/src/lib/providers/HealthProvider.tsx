@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
-import apiGet from "../api/local";
+import { apiGet } from "../api/local";
 import type { components } from "../api/types";
 
 type HealthResponse = components["schemas"]["HealthResponse"];

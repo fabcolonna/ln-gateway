@@ -19,7 +19,7 @@ type GetArgs<Path extends GetPath> =
     ? [init?: Exclude<GetInit<Path>, undefined> & Record<string, unknown>]
     : [init: GetInit<Path> & Record<string, unknown>];
 
-export default async function apiGet<Path extends GetPath>(
+export async function apiGet<Path extends GetPath>(
   path: Path,
   ...init: GetArgs<Path>
 ): Promise<MethodResponse<typeof apiClient, "get", Path, GetInit<Path>>> {
@@ -37,4 +37,40 @@ export default async function apiGet<Path extends GetPath>(
   }
 
   return data as MethodResponse<typeof apiClient, "get", Path, GetInit<Path>>;
+}
+
+type DeletePath = ClientPathsWithMethod<typeof apiClient, "delete">;
+type DeleteInit<Path extends DeletePath> = MaybeOptionalInit<
+  paths[Path],
+  "delete"
+>;
+type DeleteArgs<Path extends DeletePath> =
+  undefined extends DeleteInit<Path>
+    ? [init?: Exclude<DeleteInit<Path>, undefined> & Record<string, unknown>]
+    : [init: DeleteInit<Path> & Record<string, unknown>];
+
+export async function apiDelete<Path extends DeletePath>(
+  path: Path,
+  ...init: DeleteArgs<Path>
+): Promise<MethodResponse<typeof apiClient, "delete", Path, DeleteInit<Path>>> {
+  const { data, error, response } = await apiClient.DELETE(
+    path,
+    ...(init as never)
+  );
+
+  if (!response.ok) {
+    throw new HttpError({
+      method: "DELETE",
+      status: response.status,
+      url: String(path),
+      body: error,
+    });
+  }
+
+  return data as MethodResponse<
+    typeof apiClient,
+    "delete",
+    Path,
+    DeleteInit<Path>
+  >;
 }

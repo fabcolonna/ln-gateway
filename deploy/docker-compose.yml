@@ -95,7 +95,9 @@ services:
       context: ..
       dockerfile: client/Dockerfile
       args:
-        CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL:-${VITE_API_BASE_URL:-http://localhost:${HOST_WEB_PORT:-${WEB_PORT:-8080}}}}
+        # If unset, the frontend defaults to same-origin (window.location.origin),
+        # which works behind the nginx reverse proxy in this compose.
+        CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL-}
     depends_on:
       - server
     restart: unless-stopped

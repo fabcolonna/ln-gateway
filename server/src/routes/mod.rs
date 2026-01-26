@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use axum::http::Uri;
+use axum::routing::delete;
 use axum::{
     Json, Router,
     http::StatusCode,
@@ -15,6 +17,7 @@ pub mod callbacks;
 mod channel_request;
 mod health;
 mod lnurl_auth_request;
+mod recent_requests;
 mod withdraw_request;
 
 // TYPES
@@ -81,16 +84,28 @@ mod api_error {
 pub fn get_router() -> Router<Arc<Context>> {
     Router::new()
         .route("/health", get(health::handler))
+        .route("/recent-requests", get(recent_requests::get::handler))
+        .route("/recent-requests", delete(recent_requests::delete::handler))
         .route("/channel-request", get(channel_request::handler))
         .route("/withdraw-request", get(withdraw_request::handler))
         .route("/lnurl-auth-request", get(lnurl_auth_request::handler))
         .nest("/callbacks", callbacks::get_router())
 }
 
+pub async fn not_found(uri: Uri) -> Response {
+    let json = serde_json::json!({
+        "status": StatusCode::NOT_FOUND.as_u16(),
+        "error": format!("Route not found: {}", uri.path()),
+    });
+    (StatusCode::NOT_FOUND, Json(json)).into_response()
+}
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
         health::handler,
+        recent_requests::get::handler,
+        recent_requests::delete::handler,
         channel_request::handler,
         withdraw_request::handler,
         lnurl_auth_request::handler,
@@ -102,6 +117,7 @@ pub fn get_router() -> Router<Arc<Context>> {
             health::LightningStatus,
             health::LightningInfo,
             health::HealthResponse,
+            crate::core::recent_request::entry::RecentRequestEntry,
             channel_request::ChannelRequestResponse,
             withdraw_request::WithdrawRequestResponse,
             lnurl_auth_request::LnUrlAuthRequestResponse,

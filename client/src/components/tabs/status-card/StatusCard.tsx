@@ -1,5 +1,13 @@
-import { UpdateIcon } from "@radix-ui/react-icons";
-import { Badge, Button, Card, Flex, Grid, Text } from "@radix-ui/themes";
+import { InfoCircledIcon, UpdateIcon } from "@radix-ui/react-icons";
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  Flex,
+  Grid,
+  Text,
+} from "@radix-ui/themes";
 import { useHealth } from "@/lib/providers/HealthProvider";
 import BlockchainCard from "./cards/Blockchain";
 import ChannelsCard from "./cards/Channels";
@@ -51,6 +59,16 @@ export default function StatusCard() {
           </Button>
         </Flex>
       </Flex>
+
+      <Callout.Root color="blue" variant="soft" size="1">
+        <Callout.Icon>
+          <InfoCircledIcon />
+        </Callout.Icon>
+        <Callout.Text>
+          Blockchain and Channels reflect the underlying Bitcoin node (bitcoind)
+          and Lightning node (CLN) running in the background.
+        </Callout.Text>
+      </Callout.Root>
 
       <Grid
         rows="2"

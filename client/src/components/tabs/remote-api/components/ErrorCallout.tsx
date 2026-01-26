@@ -11,6 +11,7 @@ function compactDetails(value: string) {
 function stringifyError(error: unknown) {
   if (error instanceof HttpError) {
     const body = (() => {
+      if (error.body === null || error.body === undefined) return "";
       if (
         typeof error.body === "object" &&
         error.body !== null &&
@@ -26,9 +27,11 @@ function stringifyError(error: unknown) {
       }
     })();
 
+    const sanitized = body.trim() === "null" ? "" : body;
+
     return {
       status: error.status,
-      details: compactDetails(body || error.message),
+      details: compactDetails(sanitized || error.message),
     };
   }
 

@@ -1,6 +1,7 @@
 use crate::core::cli::Args;
+use crate::core::recent_request::entry::RecentRequestEntry;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -12,6 +13,8 @@ pub struct Context {
 
     pub btc_client: BitcoinRPCConnector,
     pub cln_client: Mutex<LightningRPCConnector>,
+
+    pub recent_requests: Mutex<VecDeque<RecentRequestEntry>>,
 
     // Set of active withdrawal keys for LUD-03 withdraw requests
     pub withdrawal_keys_set: Mutex<HashSet<String>>,
@@ -51,6 +54,7 @@ impl Context {
                     args,
                     btc_client: bitcoin,
                     cln_client: Mutex::new(cln_client),
+                    recent_requests: Mutex::new(VecDeque::new()),
                     withdrawal_keys_set: Mutex::new(HashSet::new()),
                     channel_keys_set: Mutex::new(HashSet::new()),
                     auth_pending_keys_set: Mutex::new(HashSet::new()),

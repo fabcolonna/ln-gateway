@@ -1,4 +1,5 @@
-import { Badge, Card, Code, Flex, Text } from "@radix-ui/themes";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { Badge, Callout, Card, Code, Flex, Text } from "@radix-ui/themes";
 import SubcardTitle from "@/components/tabs/status-card/components/SubcardTitle";
 import getEnv from "@/env";
 import { useHealth } from "@/lib/providers/HealthProvider";
@@ -6,7 +7,12 @@ import { formatMsat } from "@/lib/utils/formatters";
 
 export default function GatewayCard() {
   const { health, isOperational } = useHealth();
-  const backendEndpoint = getEnv().CLIENT_API_BASE_URL;
+  const apiBaseUrl = getEnv().CLIENT_API_BASE_URL;
+  const backendEndpoint =
+    typeof window !== "undefined" &&
+    new URL(apiBaseUrl).origin === window.location.origin
+      ? window.location.origin
+      : apiBaseUrl;
   const gatewayState = !health
     ? "unknown"
     : isOperational
@@ -43,11 +49,21 @@ export default function GatewayCard() {
         >
           <Flex direction="column" gap="1" style={{ minWidth: 0 }}>
             <Text size="2" color="gray">
-              Backend endpoint
+              Gateway URL (for clients)
             </Text>
             <Code className="truncate" style={{ maxWidth: "100%" }}>
               {backendEndpoint}
             </Code>
+            <Callout.Root color="blue" variant="soft" size="1">
+              <Callout.Icon>
+                <InfoCircledIcon />
+              </Callout.Icon>
+              <Callout.Text>
+                Use this URL from other clients to reach the gateway API (for
+                example{" "}
+                <Code>{`${backendEndpoint.replace(/\/$/, "")}/health`}</Code>).
+              </Callout.Text>
+            </Callout.Root>
           </Flex>
 
           <Flex direction="column" gap="1" style={{ minWidth: 0 }}>

@@ -6,6 +6,12 @@ LN Gateway is a small Axum-based REST server in front of a Core Lightning (CLN) 
 
 The goal is to decouple Lightning operations from application logic by exposing a small, typed HTTP API and a minimal operational dashboard.
 
+<p align="center">
+  <img src="assets/status.png" alt="Status dashboard" width="45%" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/remote.png" alt="Remote API" width="45%" />
+</p>
+
 ## TL;DR
 
 - You always need a **Core Lightning node** (CLN) to run the gateway.
